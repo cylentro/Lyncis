@@ -1,9 +1,11 @@
+'use server';
+
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { JastipOrder } from '@/lib/types';
 import { matchLocation } from '@/lib/location-matcher';
 
-const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.NEXT_PUBLIC_GEMINI_MODEL || 'gemini-1.5-flash';
+const API_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 const SYSTEM_PROMPT = `
@@ -52,7 +54,7 @@ RULES:
 
 export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]> {
     if (!API_KEY) {
-        console.error('Gemini API Key missing (NEXT_PUBLIC_GEMINI_API_KEY)');
+        console.error('Gemini API Key missing (GEMINI_API_KEY)');
         return [];
     }
 

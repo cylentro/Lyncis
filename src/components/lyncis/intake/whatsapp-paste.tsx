@@ -35,6 +35,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { LocationAutocomplete } from './location-autocomplete';
 import { TagAutocomplete } from './tag-autocomplete';
 import { cn } from '@/lib/utils';
+import { getParserConfig } from '@/lib/config-actions';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface WhatsAppPasteProps {
@@ -60,6 +61,16 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
     onEditingChange?.(editingIndex !== null);
   }, [editingIndex, onEditingChange]);
 
+  const [config, setConfig] = useState<{
+    enableAI: boolean;
+    enableRegex: boolean;
+    regexThreshold: number;
+  } | null>(null);
+
+  useEffect(() => {
+    getParserConfig().then(setConfig);
+  }, []);
+
   // Helper to format numbers with thousand separators
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('id-ID').format(num);
@@ -72,10 +83,10 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
     setEditingIndex(null);
     setEditOrder(null);
     
-    // Config from env
-    const enableAI = process.env.NEXT_PUBLIC_PARSER_ENABLE_AI !== 'false';
-    const enableRegex = process.env.NEXT_PUBLIC_PARSER_ENABLE_REGEX !== 'false';
-    const threshold = parseFloat(process.env.NEXT_PUBLIC_PARSER_REGEX_THRESHOLD || '0.85');
+    // Config from server action
+    const enableAI = config?.enableAI !== false;
+    const enableRegex = config?.enableRegex !== false;
+    const threshold = config?.regexThreshold || 0.85;
 
 
 

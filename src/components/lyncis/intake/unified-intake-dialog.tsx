@@ -26,6 +26,8 @@ import { WhatsAppPaste } from './whatsapp-paste';
 import { LocationAutocomplete } from './location-autocomplete';
 import { TagAutocomplete } from './tag-autocomplete';
 import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
+import { getParserConfig } from '@/lib/config-actions';
 
 // ─── Props ──────────────────────────────────────────────────
 
@@ -96,8 +98,15 @@ export function UnifiedIntakePanel({
     createEmptyOrder()
   );
   const [isWhatsappEditing, setIsWhatsappEditing] = useState(false);
-  const AVAILABLE_METHODS = (process.env.NEXT_PUBLIC_INTAKE_METHODS || 'manual,excel,whatsapp').split(',').map(m => m.trim());
-  const [activeTab, setActiveTab] = useState(AVAILABLE_METHODS[0] || 'manual');
+  const [methods, setMethods] = useState<string[]>(['manual', 'excel', 'whatsapp']);
+  const [activeTab, setActiveTab] = useState('manual');
+
+  useEffect(() => {
+    getParserConfig().then(config => {
+      setMethods(config.intakeMethods);
+      setActiveTab(config.intakeMethods[0] || 'manual');
+    });
+  }, []);
 
   // Filter tags that have active (unassigned) orders
   const activeTags = allTagsData
@@ -223,7 +232,7 @@ export function UnifiedIntakePanel({
                   We'll switch the Tabs to controlled mode using a new state `activeTab`.
                 */}
                 
-                {AVAILABLE_METHODS.map((tabValue) => (
+                {methods.map((tabValue) => (
                   <TabsTrigger 
                     key={tabValue}
                     value={tabValue} 
@@ -251,7 +260,7 @@ export function UnifiedIntakePanel({
           )}
 
           {/* ── Content Area ── */}
-          {AVAILABLE_METHODS.includes('manual') && (
+          {methods.includes('manual') && (
             <TabsContent value="manual" className="flex-1 flex flex-col min-h-0 m-0 overflow-hidden data-[state=inactive]:hidden">
               <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-4 pb-2 bg-muted/5">
                 <div className="animate-in fade-in duration-200 space-y-4">
@@ -488,7 +497,7 @@ export function UnifiedIntakePanel({
         )}
 
           {/* ── Batch Tabs ── */}
-          {AVAILABLE_METHODS.includes('excel') && (
+          {methods.includes('excel') && (
             <TabsContent value="excel" className="flex-1 flex flex-col min-h-0 m-0 overflow-hidden data-[state=inactive]:hidden">
               <div className="flex-1 overflow-y-auto p-5">
                 <div className="animate-in slide-in-from-right-3 duration-200">
@@ -498,7 +507,7 @@ export function UnifiedIntakePanel({
             </TabsContent>
           )}
 
-          {AVAILABLE_METHODS.includes('whatsapp') && (
+          {methods.includes('whatsapp') && (
             <TabsContent value="whatsapp" className="flex-1 flex flex-col min-h-0 m-0 overflow-hidden data-[state=inactive]:hidden">
                <div className={cn(
                  "flex-1 transition-all flex flex-col", 

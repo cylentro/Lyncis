@@ -55,7 +55,7 @@ npm install
 
 # Set up environment variables (for AI features)
 cp .env.local.example .env.local
-# Add your NEXT_PUBLIC_GEMINI_API_KEY
+# Add your GEMINI_API_KEY
 
 # Run development server
 npm run dev
@@ -106,6 +106,7 @@ src/
 - Indonesian address dictionary with autocomplete (Integrated)
 - Smart WhatsApp Parser refinements (Confidence-based filtering)
 - Automated Test Suite: Regex parser validation with 20+ test cases (✅ Complete)
+- **Security Hardening**: Migrated sensitive configuration to Server Actions & private Env Vars (✅ Complete)
 - UI/UX polish for intake zone
 
 **Next Up: Phase 3** 🚧
