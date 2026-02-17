@@ -208,7 +208,7 @@ export function UnifiedIntakePanel({
             variant="ghost" 
             size="icon" 
             onClick={() => onOpenChange(false)}
-            className="h-8 w-8 bg-muted/40 hover:bg-destructive hover:text-white transition-all duration-200 border border-transparent active:scale-95 flex items-center justify-center p-0 rounded-full"
+            className="h-8 w-8 bg-muted/70 hover:bg-destructive hover:text-white transition-all duration-200 border border-transparent active:scale-95 flex items-center justify-center p-0 rounded-full"
           >
             <X className="h-4 w-4" />
           </Button>

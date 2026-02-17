@@ -129,13 +129,14 @@ export default function BucketPage() {
     setSidebarOpen(false);
   }, []);
 
-  // ─── Sidebar Content ─────────────────────────────────────
-  const sidebarContent = (
+  // ─── Sidebar Content Renderer ─────────────────────────────
+  const renderSidebar = (showMobileClose = false) => (
     <TagSidebar
       tags={tagInfos}
       totalOrders={totalOrders}
       selectedTag={selectedTag}
       onTagSelect={handleTagSelect}
+      showMobileClose={showMobileClose}
     />
   );
 
@@ -152,8 +153,8 @@ export default function BucketPage() {
                   <SlidersHorizontal className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 p-0">
-                {sidebarContent}
+              <SheetContent side="left" className="w-72 p-0" showCloseButton={false}>
+                {renderSidebar(true)}
               </SheetContent>
             </Sheet>
 
@@ -209,7 +210,7 @@ export default function BucketPage() {
             "h-full w-64 transition-opacity duration-300",
             isSidebarCollapsed ? "opacity-0 pointer-events-none" : "opacity-100 delay-150"
           )}>
-            {sidebarContent}
+            {renderSidebar(false)}
           </div>
         </aside>
 

@@ -2,9 +2,10 @@
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Tag } from 'lucide-react';
+import { ChevronDown, Tag, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { SheetClose } from '@/components/ui/sheet';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -19,6 +20,7 @@ interface TagSidebarProps {
   totalOrders: number;
   selectedTag: string | null;
   onTagSelect: (tag: string | null) => void;
+  showMobileClose?: boolean;
 }
 
 // ─── Component ──────────────────────────────────────────────
@@ -28,6 +30,7 @@ export function TagSidebar({
   totalOrders,
   selectedTag,
   onTagSelect,
+  showMobileClose = false,
 }: TagSidebarProps) {
   const [archiveOpen, setArchiveOpen] = useState(false);
 
@@ -36,15 +39,20 @@ export function TagSidebar({
   const archivedTags = tags.filter((t) => t.unassigned === 0);
 
   return (
-    <div className="flex flex-col h-full py-2">
-      <div className="px-4 py-2">
+    <div className="flex flex-col h-full py-4">
+      <div className="px-4 pt-4 pb-4 flex items-center justify-between">
         <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.1em] opacity-70">
           Filter Tag
         </h3>
+        {showMobileClose && (
+          <SheetClose className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/70 hover:bg-destructive hover:text-white transition-all duration-200 border border-transparent active:scale-95 p-0">
+            <X className="h-4 w-4" />
+          </SheetClose>
+        )}
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="space-y-1.5 px-3">
+        <div className="space-y-2 px-3 mt-1">
           {/* All Orders */}
           <button
             onClick={() => onTagSelect(null)}
@@ -72,7 +80,7 @@ export function TagSidebar({
             </Badge>
           </button>
 
-          <div className="pt-2 pb-1">
+          <div className="pt-3 pb-2">
              <div className="h-px bg-border/50 mx-1" />
           </div>
 
@@ -114,7 +122,7 @@ export function TagSidebar({
 
           {/* Archived Tags (Riwayat) */}
           {archivedTags.length > 0 && (
-            <div className="pt-4">
+            <div className="pt-6">
               <button
                 onClick={() => setArchiveOpen(!archiveOpen)}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.1em] hover:text-foreground transition-colors group"
