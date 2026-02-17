@@ -33,7 +33,7 @@ export default function RootLayout({
         <TooltipProvider>
           {children}
         </TooltipProvider>
-        <Toaster richColors closeButton position="top-right" />
+        <Toaster closeButton position="top-right" theme="light" />
       </body>
     </html>
   );

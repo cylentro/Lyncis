@@ -142,7 +142,7 @@ export default function BucketPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background selection:bg-primary/10">
       {/* ── Header ─────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b bg-background">
         <div className="flex h-14 items-center justify-between gap-3 px-4 md:px-6">
           <div className="flex items-center gap-3">
             {/* Mobile sidebar trigger */}
@@ -168,7 +168,7 @@ export default function BucketPage() {
             </Button>
 
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
                 <Package className="h-5 w-5 text-primary" />
               </div>
               <div>
@@ -188,7 +188,7 @@ export default function BucketPage() {
                 {selectedTag ? ` • ${selectedTag}` : ''}
               </span>
             </div>
-            <Button size="sm" onClick={() => setIntakePanelOpen(true)} className="h-8 gap-1.5 shadow-sm active:scale-95 transition-transform duration-200">
+            <Button size="sm" onClick={() => setIntakePanelOpen(true)} className="h-8 gap-1.5 active:scale-95 transition-transform duration-200 rounded-md">
               <Plus className="h-3.5 w-3.5" />
               Tambah <span className="hidden sm:inline">Pesanan</span>
             </Button>
@@ -222,8 +222,8 @@ export default function BucketPage() {
             isSidebarCollapsed ? "max-w-[98%] 2xl:max-w-[2560px]" : "max-w-[98%] 2xl:max-w-[1920px]"
           )}>
             <div className={cn(
-              "rounded-xl border bg-background shadow-sm overflow-hidden transition-all duration-500",
-              isSidebarCollapsed && "shadow-md ring-1 ring-primary/5"
+              "rounded-md border bg-background overflow-hidden transition-all duration-500",
+              isSidebarCollapsed && "ring-1 ring-primary/10"
             )}>
               <OrderTable
                 orders={orders ?? []}

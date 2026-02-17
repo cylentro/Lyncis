@@ -49,9 +49,9 @@ export function TagSidebar({
           <button
             onClick={() => onTagSelect(null)}
             className={cn(
-              'group flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-all duration-300 active:scale-[0.98]',
+              'group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-all duration-300 active:scale-[0.98]',
               selectedTag === null
-                ? 'bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20'
+                ? 'bg-primary/10 text-primary'
                 : 'hover:bg-accent/50 hover:text-accent-foreground text-muted-foreground'
             )}
           >
@@ -64,7 +64,7 @@ export function TagSidebar({
               className={cn(
                 "ml-2 text-[10px] h-5 px-1.5 transition-all duration-300",
                 selectedTag === null 
-                  ? "bg-primary text-primary-foreground border-transparent shadow-sm" 
+                  ? "bg-primary text-primary-foreground border-transparent" 
                   : "bg-transparent text-muted-foreground group-hover:border-primary/30"
               )}
             >
@@ -82,16 +82,16 @@ export function TagSidebar({
               key={tag.name}
               onClick={() => onTagSelect(tag.name)}
               className={cn(
-                'group flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-all duration-300 active:scale-[0.98]',
+                'group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-all duration-300 active:scale-[0.98]',
                 selectedTag === tag.name
-                  ? 'bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20'
+                  ? 'bg-primary/10 text-primary'
                   : 'hover:bg-accent/50 hover:text-accent-foreground text-muted-foreground'
               )}
             >
               <span className="flex items-center gap-2.5">
                 <span className={cn(
                   "h-2 w-2 rounded-full shrink-0 transition-all duration-500 group-hover:scale-125",
-                  selectedTag === tag.name ? "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "bg-green-500/60"
+                  selectedTag === tag.name ? "bg-primary" : "bg-green-500/60"
                 )} />
                 <span className={cn(
                   "truncate font-medium transition-colors duration-300",
@@ -135,9 +135,9 @@ export function TagSidebar({
                       key={tag.name}
                       onClick={() => onTagSelect(tag.name)}
                       className={cn(
-                        'group flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-all duration-200',
+                        'group flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-xs transition-all duration-200',
                         selectedTag === tag.name
-                          ? 'bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20'
+                          ? 'bg-primary/10 text-primary'
                           : 'hover:bg-accent/50 hover:text-accent-foreground text-muted-foreground'
                       )}
                     >

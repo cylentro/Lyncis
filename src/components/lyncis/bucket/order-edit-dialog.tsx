@@ -173,7 +173,7 @@ export function OrderEditDialog({
                 id="tag"
                 value={formData.tag}
                 onChange={(e) => updateTag(e.target.value)}
-                placeholder="Contoh: BKK-MAY-2024"
+                placeholder="Contoh: BKK-MAY-2025"
                 className="mt-1.5"
               />
               {activeTags.length > 0 && (
@@ -189,7 +189,7 @@ export function OrderEditDialog({
                         key={t}
                         type="button"
                         onClick={() => updateTag(t)}
-                        className="rounded-md border bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                        className="rounded-md border bg-muted px-2 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
                         {t}
                       </button>
@@ -315,7 +315,7 @@ export function OrderEditDialog({
                 {formData.items.map((item, index) => (
                   <div
                     key={item.id}
-                    className="rounded-lg border bg-muted/30 p-3 space-y-3"
+                    className="rounded-md border bg-muted/20 p-3 space-y-3"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-muted-foreground">

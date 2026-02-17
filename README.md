@@ -105,6 +105,7 @@ src/
 **Phase 4: Partial** 🚧
 - Indonesian address dictionary with autocomplete (Integrated)
 - Smart WhatsApp Parser refinements (Confidence-based filtering)
+- Automated Test Suite: Regex parser validation with 20+ test cases (✅ Complete)
 - UI/UX polish for intake zone
 
 **Next Up: Phase 3** 🚧

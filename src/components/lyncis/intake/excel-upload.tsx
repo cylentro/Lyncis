@@ -111,13 +111,13 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
     return (
       <div className="w-full space-y-6">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-3 px-4 py-2 border rounded-full bg-primary/5 border-primary/20">
+          <div className="flex items-center gap-3 px-4 py-2 border rounded-md bg-muted/20 border-border">
             <FileCheck className="h-5 w-5 text-primary" />
             <span className="text-sm font-medium">{file.name}</span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 rounded-full hover:bg-destructive/10 hover:text-destructive"
+              className="h-6 w-6 rounded-md hover:bg-destructive/10 hover:text-destructive"
               onClick={clearFile}
             >
               <X className="h-4 w-4" />
@@ -198,7 +198,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
         </div>
       ) : (
         <>
-          <div className="rounded-full bg-primary/10 p-4 mb-4 group-hover:bg-primary/20 transition-colors">
+          <div className="rounded-md bg-primary/5 p-4 mb-4 group-hover:bg-primary/10 transition-colors">
             <Upload className="h-8 w-8 text-primary" />
           </div>
           <p className="text-sm font-semibold mb-1">Klik atau seret file Excel/CSV ke sini</p>
