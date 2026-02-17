@@ -1,6 +1,6 @@
 # Lyncis — Data Cleaning House
 
-A modern, offline-first Jastip order management system built with Next.js 15, featuring intelligent data intake and batch processing capabilities.
+A modern, offline-first Jastip order management system built with Next.js 16, featuring intelligent data intake and batch processing capabilities.
 
 ## 🚀 Features
 
@@ -13,7 +13,7 @@ A modern, offline-first Jastip order management system built with Next.js 15, fe
 
 ### Phase 2: Smart Intake Zone (✅ Complete)
 - **Excel Upload**: Drag-and-drop with sticky header mapping (localStorage-based)
-- **WhatsApp Parser**: Regex-based extraction with AI fallback (Gemini 2.5 Flash)
+- **WhatsApp Parser**: Regex-based extraction with AI fallback (Gemini 2.5 Flash Lite)
 - **Unified Intake Dialog**: Tabbed interface for manual entry, Excel, and WhatsApp parsing
 - **Intelligent Processing**: Automatic parser selection based on confidence scores
 - **Tag Autocomplete**: Smart filtering showing only active tags
@@ -24,26 +24,27 @@ A modern, offline-first Jastip order management system built with Next.js 15, fe
 - Batch drawer with origin selection
 - Floating action bar for bulk operations
 
-### Phase 4: Polish & PWA (🚧 Planned)
-- Indonesian address dictionary with autocomplete
-- PWA configuration for offline capability
-- Bahasa Indonesia label audit
-- Responsive design refinements
+### Phase 4: Polish & PWA (🚧 In Progress)
+- **Indonesian Location Dictionary**: Integrated 80k+ records (BPS/Postal codes) with smart alias matching (✅ Complete)
+- **Location Autocomplete**: Smart address completion in intake and edit forms (✅ Complete)
+- **PWA configuration**: Offline capability for field use
+- **Bahasa Indonesia label audit**: Ongoing refinement of terminology
+- **Responsive design refinements**: Continued mobile optimization
 
 ## 🛠️ Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Database**: Dexie.js (IndexedDB wrapper)
 - **UI Components**: Shadcn/UI + Radix UI
 - **Styling**: Tailwind CSS
 - **Icons**: Lucide React
-- **AI Integration**: Google Generative AI (Gemini 2.5 Flash)
-- **Excel Parsing**: SheetJS (xlsx)
+- **AI Integration**: Google Generative AI (Gemini 2.5 Flash Lite)
+- **Data Source**: Indonesian Location Dictionary (BPS/Kemendagri)
 
 ## 📦 Getting Started
 
 ### Prerequisites
-- Node.js ≥ 18
+- Node.js ≥ 20
 - npm/yarn/pnpm/bun
 
 ### Installation
@@ -85,17 +86,12 @@ src/
 ├── lib/                   # Utilities and business logic
 │   ├── db.ts             # Dexie database schema
 │   ├── types.ts          # TypeScript interfaces
-│   ├── pricing.ts        # Circular pricing logic
-│   ├── excel-parser.ts   # Excel file parsing
+│   ├── location-matcher.ts # Smart location matching logic
 │   ├── whatsapp-parser.ts # WhatsApp text extraction
 │   ├── llm-parser.ts     # AI-powered parsing
-│   └── header-mapper.ts  # Sticky column mapping
+│   └── pricing.ts        # Circular pricing logic
 └── artifacts/
     └── superpowers/       # Project planning & tracking
-        ├── plan.md        # Implementation roadmap
-        ├── checklist.md   # Detailed task tracking
-        ├── review.md      # Code review notes
-        └── finish.md      # Completion summary
 ```
 
 ## 🎯 Current Status
@@ -105,6 +101,11 @@ src/
 - Sidebar animations refined with burger menu toggle
 - Table expansion optimized for ultra-wide displays
 - Intake dialog polished with active tag filtering
+
+**Phase 4: Partial** 🚧
+- Indonesian address dictionary with autocomplete (Integrated)
+- Smart WhatsApp Parser refinements (Confidence-based filtering)
+- UI/UX polish for intake zone
 
 **Next Up: Phase 3** 🚧
 - Multi-select state manager
@@ -131,5 +132,5 @@ This project is part of the Lyncis POC initiative.
 
 ---
 
-**Last Updated**: February 16, 2026  
-**Build Status**: ✅ Passing
+**Last Updated**: February 17, 2026  
+**Build Status**: ✅ Passing production build (Next.js 16)

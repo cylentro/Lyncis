@@ -1,28 +1,27 @@
-# Brainstorming: Sidebar Improvements
+# Superpowers Brainstorm: Adhering to Database Names
 
 ## Goal
-Improve the sidebar aesthetics and functionality by making it collapsible and fixing the 'right margin 0' issue.
+Ensure the location matcher returns the exact strings from the `location.json` database, even when matching against variants in parentheses. Specifically for Jakarta Selatan (and others), we should not return a "shortened" or "cleaned" version of the name if the user provided an alias.
 
 ## Constraints
-- Must maintain existing tag filtering functionality.
-- Should be responsive (already handled by `Sheet` for mobile, but needs desktop improvement).
-- Premium design according to system instructions.
+- Return the full `subdistrict_name`, `district_name`, etc., as they appear in the JSON.
+- Maintain the "smart" matching that allows aliases like "setiabudi" to find the "Setia Budi (Setiabudi)" record.
+
+## Known context
+- Currently, I added `findBestDisplayName` which returns the specific variant matched.
+- The user's feedback "we should stick to the data that we have" indicates they prefer the canonical database strings.
 
 ## Risks
-- Layout shift when collapsing/expanding.
-- Accessibility of the toggle button.
-- Performance if too many animations are added (unlikely for a sidebar).
+- The full strings might be long/verbose (e.g., "Setia Budi (Setiabudi)"), but if that's what the data has, that's what we should use.
 
-## Options
-1. **Fully Hiding Sidebar**: Toggle button hides the sidebar completely.
-2. **Mini Sidebar**: Toggle button collapses the sidebar to a thin bar with icons (might be hard if tags don't have unique icons).
-3. **Resizable/Collapsible**: A classic sidebar that can be collapsed to a narrow state or hidden.
+## Options (2–4)
+1. **Remove Variant Return Logic**: Keep the enhanced variant-aware scoring, but remove the `findBestDisplayName` helper and just return the original field from the database.
+2. **Prioritize Primary Name**: If a variant matches, return the primary name (the part before the parentheses) instead of the full string. (Contradicts "stick to data").
+3. **Keep Enhanced Scoring Only**: Ensure that if "Setiabudi" is typed, the score for "Setia Budi (Setiabudi)" is high enough to be selected, but the output remains the full string.
 
 ## Recommendation
-Implement a collapsible sidebar that expands/collapses with a smooth transition. Fix the 'ugly' part by adding proper padding, better typography, and making the selection indicator more refined.
-We will use a 'partial collapse' or 'full hide' with a floating toggle button.
+**Option 1**: Revert the return value logic to use the original database strings, while keeping the improved regex and variant-aware scoring so that the matches are still found correctly.
 
-## Acceptance Criteria
-- Sidebar can be collapsed/expanded.
-- Right margin/padding is fixed (selection highlight should not touch the border).
-- Visuals are 'premium' (better spacing, subtle hover states, clean transitions).
+## Acceptance criteria
+- Input "kelurahan setiabudi" -> `kelurahan: "Setia Budi (Setiabudi)"`
+- Input "kelurahan setia budi" -> `kelurahan: "Setia Budi (Setiabudi)"` (if Jakarta is prioritized) or the exact match.
