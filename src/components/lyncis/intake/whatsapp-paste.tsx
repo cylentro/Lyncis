@@ -23,10 +23,11 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
+  ArrowLeft,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
-import { parseWhatsAppText, getParsingConfidence } from '@/lib/whatsapp-parser';
+import { parseWhatsAppText, getParsingConfidence, countPotentialItems } from '@/lib/whatsapp-parser';
 import { parseWithLLM } from '@/lib/llm-parser';
 import { JastipOrder } from '@/lib/types';
 import { toast } from 'sonner';
@@ -65,6 +66,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
     enableAI: boolean;
     enableRegex: boolean;
     regexThreshold: number;
+    hasApiKey: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -88,9 +90,6 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
     const enableRegex = config?.enableRegex !== false;
     const threshold = config?.regexThreshold || 0.85;
 
-
-
-
     try {
       let regexResults: Partial<JastipOrder>[] = [];
       let regexConfidence = 0;
@@ -102,29 +101,54 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
           ? regexResults.reduce((sum, o) => sum + getParsingConfidence(o), 0) / regexResults.length
           : 0;
 
-        // If Regex is very confident, use it immediately
-        if (regexResults.length > 0 && regexConfidence >= threshold) {
+        // Check if items count matches potential items count
+        const totalRawItems = countPotentialItems(text);
+        const totalExtractedItems = regexResults.reduce((sum, o) => sum + (o.items?.length || 0), 0);
+        const hasMissingItems = totalRawItems > totalExtractedItems;
+
+        // If Regex is very confident AND didn't miss items according to heuristic, use it immediately
+        if (regexResults.length > 0 && regexConfidence >= threshold && !hasMissingItems) {
           setParsedOrders(regexResults);
           setIsInputCollapsed(true);
           toast.success(`Berhasil mengenali ${regexResults.length} pesanan`);
           return;
         }
+
+        // Add a debug note or log if regex is confident but misses items
+        if (regexResults.length > 0 && regexConfidence >= threshold && hasMissingItems) {
+           console.log(`Regex confidence is high (${regexConfidence.toFixed(2)}), but heuristic suggests missing items (${totalExtractedItems}/${totalRawItems}). Falling back to AI.`);
+        }
       }
 
       // 2. If Regex is weak/disabled/empty, Try AI if enabled
       if (enableAI) {
-        try {
-          const llmResults = await parseWithLLM(text);
-          if (llmResults.length > 0) {
-            setParsedOrders(llmResults);
-            setIsInputCollapsed(true);
-            toast.success(`Berhasil mengekstrak ${llmResults.length} pesanan`);
-            return;
+        if (!config?.hasApiKey) {
+          console.warn("AI extraction requested but GEMINI_API_KEY is missing.");
+          toast.error("Ekstraksi AI tidak tersedia (API Key belum dikonfigurasi).");
+        } else {
+          // Show a subtle toast that AI is kicking in
+          const aiToastId = toast.loading("Menganalisis format pesanan dengan AI...");
+          
+          try {
+            const llmResults = await parseWithLLM(text);
+            toast.dismiss(aiToastId);
+            
+            if (llmResults.length > 0) {
+              setParsedOrders(llmResults);
+              setIsInputCollapsed(true);
+              toast.success(`Berhasil mengekstrak ${llmResults.length} pesanan via AI`, {
+                icon: <Sparkles className="h-4 w-4 text-amber-500" />
+              });
+              return;
+            }
+          } catch (err) {
+            toast.dismiss(aiToastId);
+            console.error("AI Parse Error:", err);
           }
-        } catch (err) {
-          console.error("AI Parse Error:", err);
-          // Fallthrough to regex fallback
         }
+      } else if (regexResults.length === 0 || regexConfidence < threshold) {
+        // Regex failed/weak and AI is explicitly disabled
+        toast.info("AI Parser dinonaktifkan. Menggunakan ekstraksi standar.");
       }
 
       // 3. Last Resort: Use Regex results if present (even if low confidence)
@@ -276,7 +300,24 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
     return (
       <div className="flex flex-col h-full bg-background animate-in fade-in zoom-in-95 duration-200">
         
-        {/* Header Removed as requested - relies on main dialog header */}
+        {/* Sticky Header with Back Button */}
+        <div className="flex items-center gap-3 px-5 py-3 border-b shrink-0 bg-background/80 backdrop-blur-md sticky top-0 z-20">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 rounded-full hover:bg-muted active:scale-95 transition-all" 
+            onClick={cancelEditing}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex flex-col gap-0.5">
+            <h3 className="text-xs font-black uppercase tracking-widest text-primary/80">Edit Detail Pesanan</h3>
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <span className="font-bold bg-muted px-1.5 py-0.5 rounded text-foreground/70">#{editingIndex + 1}</span>
+              <span className="truncate max-w-[150px]">{editOrder?.recipient?.name || 'Tanpa Nama'}</span>
+            </div>
+          </div>
+        </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
@@ -538,11 +579,14 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
                     placeholder={`Paste teks dari WhatsApp di sini...
                     
 Contoh:
-Nama: Budi
+Nama: Satria
 HP: 08123456789
-Alamat: Jl. Sudirman No. 1
+Alamat: Jl. Prof. DR. Satrio No.Kav.18, Kuningan, Karet Kuningan, Kecamatan Setiabudi, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12940, Indonesia
 Pesanan: 
-2x Pocky Matcha @30000`}
+2x Pocky Matcha @30000
+3 Indomie Goreng Rendang 9000
+1 Teh Botol 250ml 5k
+3 Aqua 600ml @3k`}
                     className="min-h-[300px] max-h-[300px] font-mono text-sm w-full overflow-y-auto"
                     value={text}
                     onChange={(e) => setText(e.target.value)}
@@ -597,7 +641,8 @@ Pesanan:
                 const confidence = getParsingConfidence(order);
                 const isLocationMissing = !order.recipient?.kelurahan || !order.recipient?.kecamatan || !order.recipient?.kota || !order.recipient?.provinsi || !order.recipient?.kodepos;
                 const isIncomplete = !order.recipient?.name || !order.recipient?.phone || !order.recipient?.addressRaw || isLocationMissing || !order.items?.length;
-                const showWarning = confidence < 0.8 || isIncomplete;
+                const isItemMismatch = (order.metadata?.potentialItemCount || 0) > (order.items?.length || 0);
+                const showWarning = confidence < 0.8 || isIncomplete || isItemMismatch;
 
                 return (
                   <div key={idx} className={cn(
@@ -636,8 +681,13 @@ Pesanan:
                             <span className="text-xs text-muted-foreground">• {order.recipient?.phone || 'Tanpa HP'}</span>
                           </div>
                           
-                          <div className="text-[10px] font-black text-muted-foreground/30 font-mono tracking-widest mr-1 group-hover:opacity-0 transition-opacity uppercase">
-                            #{(idx + 1).toString().padStart(2, '0')}
+                          <div className="flex items-center gap-2 mr-1">
+                            {order.metadata?.isAiParsed && (
+                              <Badge variant="outline" className="text-[8px] px-1 h-3.5 bg-amber-50 text-amber-600 border-amber-200 uppercase font-black tracking-tighter">AI</Badge>
+                            )}
+                            <div className="text-[10px] font-black text-muted-foreground/30 font-mono tracking-widest group-hover:opacity-0 transition-opacity uppercase">
+                              #{(idx + 1).toString().padStart(2, '0')}
+                            </div>
                           </div>
                         </div>
                         
@@ -655,7 +705,14 @@ Pesanan:
                         ) : (
                           <div className="flex items-center gap-1.5 text-[10px] text-destructive/80 font-bold mb-3 bg-destructive/[0.03] w-fit px-2 py-0.5 rounded border border-destructive/10">
                             <AlertCircle className="h-3 w-3" />
-                            <span>Lokasi belum terpetakan (Kecamatan/Kelurahan missing)</span>
+                          <span>Lokasi belum terpetakan (Kecamatan/Kelurahan missing)</span>
+                        </div>
+                        )}
+                        
+                        {isItemMismatch && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-amber-700 font-bold mb-3 bg-amber-50 dark:bg-amber-900/20 w-fit px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40">
+                            <Sparkles className="h-3 w-3 text-amber-600" />
+                            <span>Heuristic: Kemungkinan barang terlewat ({order.items?.length}/{order.metadata?.potentialItemCount} pesanan ditemukan)</span>
                           </div>
                         )}
                         

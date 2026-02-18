@@ -12,6 +12,12 @@ interface ContactResult {
     phone: string;
 }
 
+const CONTACT_LABELS_REGEX = /^(nama|name|penerima|hp|wa|telp|phone|alamat|address|lokasi|almt|tlp)\s*[:\-]/i;
+
+const isContactLine = (line: string): boolean => {
+    return CONTACT_LABELS_REGEX.test(line.trim());
+};
+
 /**
  * Simplified contact splitter optimized for WhatsApp formats
  * Handles both labeled and unlabeled formats
@@ -153,19 +159,47 @@ function extractItems(text: string): JastipItem[] {
     // Pattern 5: Numbered list (e.g., "1. Pocky Matcha @30000 (2pcs)")
     const numberedPattern = /^\s*\d+\.\s*([^@\n(]+?)(?:\s*@\s*(?:Rp\.?\s*)?([0-9.,]+))?(?:\s*\((\d+)\s*(?:pcs|pc|buah|box|pack)?\))?\s*$/gmi;
 
-    // Pattern 6: Qty Item TotalPrice (e.g., "3 Chitato 45000")
-    const qtyItemTotalPattern = /^\s*([1-9]\d?)\s+([A-Za-z][^\d\n]+?)\s+(?:Rp\.?\s*)?([0-9.,]+)\s*$/gmi;
+    // Pattern 6: Qty Item TotalPrice (e.g., "3 Chitato 45000" or "2 Teh Botol 250ml 5k")
+    const qtyItemTotalPattern = /^\s*([1-9]\d?)\s+(.+?)\s+(?:Rp\.?\s*)?(\d{1,3}(?:[.,]\d{3})*(?:\s*k)?|\d+(?:\s*k)?)\s*$/gmi;
 
-    // Pattern 7: Qty Item @ Price (without 'x', e.g., "1 Chitato @30000")
-    const qtyItemAtPricePattern = /^\s*(\d+)\s+([A-Za-z][^@\n]+?)\s*@\s*(?:Rp\.?\s*)?([0-9.,k]+)\s*$/gmi;
+    // Pattern 7: Qty Item @ Price (e.g., "3 Aqua 600ml @3k")
+    const qtyItemAtPricePattern = /^\s*(\d+)\s+(.+?)\s*@\s*(?:Rp\.?\s*)?([0-9.,k\s]+)\s*$/gmi;
+
+    // Pattern 8: Item Qty Price (e.g. "Indomie Goreng Rendang 3 9000")
+    const itemQtyTotalPattern = /^\s*([A-Za-z][^\d\n:]+?)\s+(\d+)\s+(?:Rp\.?\s*)?(\d{1,3}(?:[.,]\d{3})*(?:\s*k)?|\d+(?:\s*k)?)\s*$/gmi;
+
+    // Pattern 9: Name Price (assumes qty 1, e.g. "Indomie Kuah Soto 9000")
+    const namePricePattern = /^\s*([A-Za-z][^\d\n:]+?)\s+(?:Rp\.?\s*)?(\d{1,3}(?:[.,]\d{3})*(?:\s*k)?|\d+(?:\s*k)?)\s*$/gmi;
+
+    // Pattern 10: Item @ Price Qty (e.g., "Pocky Matcha @30000 2x")
+    const itemAtPriceQtyPattern = /^\s*(.+?)\s+@\s*(?:Rp\.?\s*)?([0-9.,k\s]+)\s+(\d+)\s*[x]?\s*$/gmi;
+
+    const isContactLineCheck = (line: string): boolean => {
+        return CONTACT_LABELS_REGEX.test(line.trim());
+    };
 
     const parsePrice = (priceStr: string): number => {
         if (!priceStr) return 0;
-        let p = priceStr.toLowerCase().replace(/[.,\s]/g, '');
+        let p = priceStr.toLowerCase().trim();
+
+        // Handle 'k' multiplier
+        let multiplier = 1;
         if (p.endsWith('k')) {
-            p = (parseFloat(p.replace('k', '')) * 1000).toString();
+            multiplier = 1000;
+            p = p.replace('k', '').trim();
         }
-        return parseInt(p) || 0;
+
+        // Clean up separators
+        // If it's a "3,5k" format, handle decimal
+        if (multiplier === 1000 && (p.includes('.') || p.includes(','))) {
+            const clean = p.replace(',', '.');
+            return Math.round(parseFloat(clean) * 1000);
+        }
+
+        // Normal price: strip decimals/thousand separators for now (simple heuristic)
+        // Rp 30.000 -> 30000
+        p = p.replace(/[.,\s]/g, '');
+        return (parseInt(p) || 0) * multiplier;
     };
 
     // Try all patterns
@@ -266,8 +300,9 @@ function extractItems(text: string): JastipItem[] {
         });
     }
 
-    // Pattern 6: Qty Item TotalPrice (e.g., "3 Chitato 45000")
+    // Pattern 6: Qty Item TotalPrice
     while ((match = qtyItemTotalPattern.exec(text)) !== null) {
+        if (isContactLine(match[0])) continue;
         const qty = parseInt(match[1]) || 1;
         const name = match[2].trim();
         const totalPrice = parsePrice(match[3]);
@@ -286,9 +321,64 @@ function extractItems(text: string): JastipItem[] {
 
     // Pattern 7: Qty Item @ Price
     while ((match = qtyItemAtPricePattern.exec(text)) !== null) {
+        if (isContactLine(match[0])) continue;
         const qty = parseInt(match[1]) || 1;
         const name = match[2].trim();
         const unitPrice = parsePrice(match[3]);
+
+        items.push({
+            id: crypto.randomUUID(),
+            name,
+            qty,
+            unitPrice,
+            totalPrice: qty * unitPrice,
+            rawWeightKg: 0,
+            isManualTotal: false,
+        });
+    }
+
+    // Pattern 8: Item Qty Price
+    while ((match = itemQtyTotalPattern.exec(text)) !== null) {
+        if (isContactLine(match[0])) continue;
+        const name = match[1].trim();
+        const qty = parseInt(match[2]) || 1;
+        const totalPrice = parsePrice(match[3]);
+        const unitPrice = Math.round(totalPrice / qty);
+
+        items.push({
+            id: crypto.randomUUID(),
+            name,
+            qty,
+            unitPrice,
+            totalPrice,
+            rawWeightKg: 0,
+            isManualTotal: true,
+        });
+    }
+
+    // Pattern 9: Name Price
+    while ((match = namePricePattern.exec(text)) !== null) {
+        if (isContactLine(match[0])) continue;
+        const name = match[1].trim();
+        const price = parsePrice(match[2]);
+
+        items.push({
+            id: crypto.randomUUID(),
+            name,
+            qty: 1,
+            unitPrice: price,
+            totalPrice: price,
+            rawWeightKg: 0,
+            isManualTotal: false,
+        });
+    }
+
+    // Pattern 10: Item @ Price Qty
+    while ((match = itemAtPriceQtyPattern.exec(text)) !== null) {
+        if (isContactLine(match[0])) continue;
+        const name = match[1].trim();
+        const unitPrice = parsePrice(match[2]);
+        const qty = parseInt(match[3]) || 1;
 
         items.push({
             id: crypto.randomUUID(),
@@ -334,13 +424,17 @@ export async function parseWhatsAppText(text: string): Promise<Partial<JastipOrd
             /^\s*[^\-\n]+?\s*-\s*\d+\s*(?:pcs|pc|buah|box|pack)?\s*-\s*(?:Rp\.?\s*)?[0-9.,]+\s*$/mi,  // Pattern 2
             /^\s*[-•]\s*[^\d\n]+?\s+(?:Rp\.?\s*)?[0-9.,]+(?:\s*x\s*\d+)?\s*$/mi,  // Pattern 4
             /^\s*\d+\.\s*[^@\n(]+?(?:\s*@\s*(?:Rp\.?\s*)?[0-9.,]+)?(?:\s*\(\d+\s*(?:pcs|pc|buah|box|pack)?\))?\s*$/mi,  // Pattern 5
-            /^\s*([1-9]\d?)\s+[A-Za-z][^\d\n]+?\s+(?:Rp\.?\s*)?[0-9.,]+\s*$/mi,  // Pattern 6
-            /^\s*(\d+)\s+([A-Za-z][^@\n]+?)\s*@\s*(?:Rp\.?\s*)?[0-9.,k]+\s*$/mi, // Pattern 7
+            /^\s*[1-9]\d?\s+.+?\s+(?:Rp\.?\s*)?(?:\d{1,3}(?:[.,]\d{3})*(?:\s*k)?|\d+(?:\s*k)?)\s*$/mi,  // Pattern 6 (revised)
+            /^\s*\d+\s+.+?\s*@\s*(?:Rp\.?\s*)?[0-9.,k\s]+\s*$/mi, // Pattern 7 (revised)
+            /^\s*[A-Za-z][^\d\n]+?\s+\d+\s+(?:Rp\.?\s*)?(?:\d{1,3}(?:[.,]\d{3})*(?:\s*k)?|\d+(?:\s*k)?)\s*$/mi, // Pattern 8
+            /^\s*[A-Za-z][^\d\n]+?\s+(?:Rp\.?\s*)?(?:\d{1,3}(?:[.,]\d{3})*(?:\s*k)?|\d+(?:\s*k)?)\s*$/mi, // Pattern 9
+            /^\s*.+?\s+@\s*(?:Rp\.?\s*)?[0-9.,k\s]+\s+\d+\s*[x]?\s*$/mi, // Pattern 10
         ];
 
         itemPatterns.forEach(pattern => {
             // Only remove if it matched an actual item (not a skipped phone number)
             cleanedBlock = cleanedBlock.split('\n').map(line => {
+                if (isContactLine(line)) return line; // NEVER remove contact lines
                 if (pattern.test(line)) {
                     const cleanDigits = line.replace(/\D/g, '');
                     // If it looks like a phone (all numeric symbols and 8+ digits), do NOT remove it
@@ -399,6 +493,10 @@ export async function parseWhatsAppText(text: string): Promise<Partial<JastipOrd
                 ...locationData,
             },
             items,
+            metadata: {
+                potentialItemCount: countPotentialItems(block),
+                isAiParsed: false,
+            },
             status: 'unassigned',
             tag: '',
             createdAt: Date.now(),
@@ -433,4 +531,53 @@ export function getParsingConfidence(order: Partial<JastipOrder>): number {
     }
 
     return Math.min(score, 1.0);
+}
+
+/**
+ * Heuristic to count how many lines in the text look like items.
+ * Used to determine if regex-based parser missed anything.
+ */
+export function countPotentialItems(text: string): number {
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    let count = 0;
+
+    // Patterns that strongly suggest an item line
+    const itemStartMarkers = [
+        /^(\s*[-•]\s+)/,           // Bullets
+        /^\s*\d+\s*[x\.]\s+/i,      // "2x ..." or "1. ..."
+        /^\s*\d+\s+[A-Z]/,          // "3 Chitato ..."
+    ];
+
+    const itemContentMarkers = [
+        /@\s*(?:Rp\.?)?\s*[0-9.,k]+/i,   // Contains price with @ or Rp
+        /\s+(?:Rp\.?)?\s*[0-9.,]+(?:k)?\b/i, // Contains price at end of line (e.g. 15000 or 15k)
+        /\s*x\s*\d+\s*/i,                 // Contains x qty
+    ];
+
+    lines.forEach(line => {
+        // Exclude lines that are clearly contact labels
+        const contactLabels = /^(nama|name|penerima|hp|wa|telp|phone|alamat|address|lokasi|almt)\s*:/i;
+        if (contactLabels.test(line)) return;
+
+        // Exclude lines that look like full contacts (name/phone/address)
+        if (line.split(/[,;\t]/).length >= 3) return;
+
+        // Check if line starts like an item
+        let isItem = itemStartMarkers.some(m => m.test(line));
+
+        // Or if it contains item-like content (qty/price)
+        if (!isItem) {
+            isItem = itemContentMarkers.some(m => m.test(line));
+        }
+
+        if (isItem) {
+            // Final check: don't count if it's strictly a name-labeled line or just a phone number
+            const phoneDigitsOnly = line.replace(/\D/g, '');
+            if (phoneDigitsOnly.length >= 8 && /^[\+\d\s\.\-\/()]{8,}$/.test(line)) return;
+
+            count++;
+        }
+    });
+
+    return count;
 }

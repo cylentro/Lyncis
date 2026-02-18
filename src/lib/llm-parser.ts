@@ -3,6 +3,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { JastipOrder } from '@/lib/types';
 import { matchLocation } from '@/lib/location-matcher';
+import { countPotentialItems } from '@/lib/whatsapp-parser';
 
 const API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
@@ -38,18 +39,27 @@ Each order object must follow this structure:
 
 RULES:
 1. Handle multiple orders separated by newlines or markers.
-2. Common Item Formats:
-   - "2x Pocky Matcha @30000" -> qty: 2, name: "Pocky Matcha", unitPrice: 30000, totalPrice: 60000
-   - "3 Chitato 45000" -> qty: 3, name: "Chitato", totalPrice: 45000, unitPrice: 15000 (totalPrice / qty)
-   - "Pocky Matcha - 1 - 25000" -> qty: 1, name: "Pocky Matcha", unitPrice: 25000, totalPrice: 25000
-   - "- Tumbler Starbucks (2pcs)" -> qty: 2, name: "Tumbler Starbucks"
-3. PRICE LOGIC:
-   - If you see "Qty Item Price", assume the price is the TOTAL for that quantity.
-   - If you see "@" or "each", assume the price is the UNIT price.
-   - ALWAYS try to populate both unitPrice and totalPrice if you have enough info.
-4. If qty is missing, default to 1.
-5. Extract only what is present. Use empty strings for missing text or 0 for missing numbers.
-6. Return ONLY a valid JSON array. No markdown, no preamble.
+2. Common Item Formats (EXTREMELY DIVERSE):
+   - "2x Pocky Matcha @30,000" -> qty: 2, name: "Pocky Matcha", unitPrice: 30000
+   - "3 Indomie Goreng Rendang 9.000" -> qty: 3, name: "Indomie Goreng Rendang", totalPrice: 9000, unitPrice: 3000
+   - "Indomie Kuah Soto 9000" -> qty: 1, name: "Indomie Kuah Soto", unitPrice: 9000
+   - "2 Teh Botol 250ml 5k" -> qty: 2, name: "Teh Botol 250ml", totalPrice: 5000
+   - "3 Aqua 600ml @3k" -> qty: 3, name: "Aqua 600ml", unitPrice: 3000
+   - "Pocky Matcha - 1 - 25.000" -> qty: 1, name: "Pocky Matcha", unitPrice: 25000
+   - "- Starbucks Tumbler (2pcs)" -> qty: 2, name: "Starbucks Tumbler"
+   - "Chitato (15.5k)" -> qty: 1, name: "Chitato", unitPrice: 15500
+   - "3. Abon Sapi @50,000 (2)" -> qty: 2, name: "Abon Sapi", unitPrice: 50000
+   - "Pocky Matcha @30000 2x" -> qty: 2, name: "Pocky Matcha", unitPrice: 30000
+
+3. PRICE & QTY LOGIC:
+   - "k" suffix means thousand (e.g., 5k = 5000, 3.5k = 3500).
+   - "dots" (.) and "commas" (,) are often used as thousand separators in IDR (e.g., 10.000 or 10,000 = 10k).
+   - If you see "Qty Name Price", usually Price is the TOTAL for that quantity.
+   - If you see "@" or "each" or "/pc", Price is the UNIT price.
+   - If quantity is missing but a price exists, default qty to 1.
+   - If a line looks like item but has no price, extract the name and qty anyway (price = 0).
+
+4. Return ONLY a valid JSON array. No markdown, no preamble. Ensure name and items are never null.
 `;
 
 export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]> {
@@ -114,6 +124,10 @@ export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]
                     id: crypto.randomUUID(),
                     isManualTotal: item.totalPrice > 0 && item.unitPrice === 0,
                 })),
+                metadata: {
+                    potentialItemCount: countPotentialItems(text), // Simplified: count against whole text or relevant block if we could split it
+                    isAiParsed: true,
+                },
                 status: 'unassigned',
                 createdAt: Date.now(),
                 logistics: {

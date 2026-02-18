@@ -27,9 +27,9 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 ### Phase 4: Polish & PWA (🚧 In Progress)
 - **Indonesian Location Dictionary**: Integrated 80k+ records (BPS/Postal codes) with smart alias matching (✅ Complete)
 - **Location Autocomplete**: Smart address completion in intake and edit forms (✅ Complete)
+- **Enhanced WhatsApp Parser**: Support for IDR thousand separators, 'k' suffix, and heuristic-based AI fallback (✅ Complete)
+- **WhatsApp Edit Mode**: Sticky header and back button for polished order refinement (✅ Complete)
 - **PWA configuration**: Offline capability for field use
-- **Bahasa Indonesia label audit**: Ongoing refinement of terminology
-- **Responsive design refinements**: Continued mobile optimization
 
 ## 🛠️ Tech Stack
 
@@ -108,7 +108,8 @@ src/
 - Automated Test Suite: Regex parser validation with 20+ test cases (✅ Complete)
 - **Security Hardening**: Migrated sensitive configuration to Server Actions & private Env Vars (✅ Complete)
 - **High-Contrast Notifications**: Themed Sonner toasts with color-coded borders, icons, and close buttons (✅ Complete)
-- **UI/UX Polished**: Refined sidebar margins, typography, and unified close button styling across all dialogs (✅ Complete)
+- **UI/UX Polished**: WhatsApp edit mode with sticky header and back button (✅ Complete)
+- **Smart Parsing**: Heuristic-based AI fallback triggering on item count mismatch (✅ Complete)
 
 **Next Up: Phase 3** 🚧
 - Multi-select state manager
@@ -135,5 +136,5 @@ This project is part of the Lyncis POC initiative.
 
 ---
 
-**Last Updated**: February 17, 2026  
+**Last Updated**: February 18, 2026  
 **Build Status**: ✅ Passing production build (Next.js 16)

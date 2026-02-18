@@ -17,3 +17,13 @@ alamat taman duren sawit 13440
 order:
 1 chitato @30k
 2 indomie @15000
+
+Nama: Satria
+HP: 08123456789
+Alamat: Jl. Prof. DR. Satrio No.Kav.18, Kuningan, Karet Kuningan, Kecamatan Setiabudi, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12940, Indonesia
+Pesanan: 
+2x Pocky Matcha @30000
+3 Indomie Goreng Rendang 9.000
+1 Indomie Kuah Soto 9.000
+2 Teh Botol 250ml 5k 
+3 Aqua 600ml @3k

@@ -43,4 +43,9 @@ export interface JastipOrder {
         volumetricWeight: number;
         chargeableWeight: number;
     };
+
+    metadata?: {
+        potentialItemCount?: number;
+        isAiParsed?: boolean;
+    };
 }
