@@ -309,14 +309,13 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
                   !readOnly && "hover:bg-muted/20 hover:border-primary/30"
               )}
             >
-              {!readOnly && (
-                  <div className="absolute -top-2 -right-2 z-20 transition-all duration-300">
+              {!readOnly && formData.items.length > 1 && (
+                  <div className="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100 transition-all duration-200">
                     <Button
                       variant="destructive"
                       size="icon"
-                      className="h-8 w-8 rounded-full shadow-lg active:scale-90 bg-destructive opacity-100"
+                      className="h-8 w-8 rounded-md active:scale-95 transition-all shadow-sm"
                       onClick={() => removeItem(index)}
-                      disabled={formData.items.length <= 1}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

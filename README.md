@@ -113,8 +113,10 @@ src/
 - **Adaptive UI Logic**: Inline field-level warnings for missing phone, address, or items (✅ Complete)
 - **Smart Parsing**: Intelligent AI fallback with greedy regex priority (✅ Complete)
 - **Workflow Clarity**: Explicit Edit vs Review modes with context-aware button labels (✅ Complete)
-- **Configurable AI Engine**: Support for Gemini-1.5, Gemma-2, and Gemma-3 with markdown JSON fallback (✅ Complete)
-- **Intake UI Polish**: Auto-reset WhatsApp extraction, hidden metadata on hover, and fixed Excel tag autocomplete (✅ Complete)
+- **Configurable AI Engine**: Support for Gemini-1.5, Gemma-2, and Gemma-3 with optimized model-specific prompts and `responseSchema` support (✅ Complete)
+- **Intake UI Polish**: Auto-reset WhatsApp extraction, hidden metadata on hover, and standardized item delete buttons across all modes (✅ Complete)
+- **Advanced Price Reconciliation**: 3-case back-calculation logic for missing unit or total prices in AI extraction (✅ Complete)
+- **Structural Parsing & AI Guardrails**: Enhanced address/item separation with zipcode awareness and strict location lookup logic (✅ Complete)
 
 **Next Up: Phase 3** 🚧
 - Multi-select state manager

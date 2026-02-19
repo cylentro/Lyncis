@@ -691,7 +691,7 @@ Pesanan:
                     "border rounded-md bg-background relative transition-all overflow-hidden hover:border-primary/20 p-3 group",
                     showWarning && "bg-destructive/[0.03] border-destructive/20 dark:bg-destructive/10 dark:border-destructive/40 shadow-[inset_0_0_12px_rgba(239,68,68,0.02)]"
                   )}>
-                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -727,7 +727,7 @@ Pesanan:
                                 No HP?
                               </div>
                             ) : (
-                              <span className="text-xs text-muted-foreground shrink-0">• {order.recipient?.phone}</span>
+                              <span className="text-xs text-muted-foreground shrink-0 group-hover:opacity-0 transition-all duration-200">• {order.recipient?.phone}</span>
                             )}
                           </div>
                           

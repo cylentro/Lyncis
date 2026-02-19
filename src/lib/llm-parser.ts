@@ -22,59 +22,71 @@ function cleanJsonString(text: string): string {
     }
     return cleaned.trim();
 }
+// ─── Shared extraction rules (kept minimal to save tokens) ────────────────
+const EXTRACTION_RULES = `STRUCTURE PARSING:
+- Text before "List:"/"Pesanan:"/"Order:" or item lines = recipient info (name, phone, address)
+- A 5-digit number in address context (e.g. "Jaksel 12940") is a ZIPCODE, not a price
+- Item lines start with qty+name or name+qty pattern, often after "List:" marker
+- addressRaw = full address text including building, street, area, zipcode
+PRICE RULES:
+- "k"=×1000, "rb"/"ribu"=×1000 (5k=5000, 30rb=30000, 15.5k=15500)
+- "." and "," are thousand separators (10.000=10000, 10,000=10000)
+- "@" or "/pc" = UNIT price; otherwise price is TOTAL for that qty
+- If qty missing, default 1. If price missing, set 0
+LOCATION: Always set provinsi/kota/kecamatan/kelurahan/kodepos to "" — our system resolves these separately
+EXAMPLES:
+"2x Pocky @30k" → qty:2, unitPrice:30000, totalPrice:60000
+"5 Donat 50k" → qty:5, unitPrice:10000, totalPrice:50000
+"Chitato 15.5k" → qty:1, unitPrice:15500, totalPrice:15500
+"3 Aqua 600ml @3rb" → qty:3, unitPrice:3000, totalPrice:9000`;
 
-const SYSTEM_PROMPT = `
-You are an expert data extractor for an Indonesian Jastip (Jasa Titip) application.
-Your task is to extract recipient and order information from raw WhatsApp messages and format it as a JSON array of orders.
+// ─── Gemini: relies on responseSchema, so prompt is ultra-lean ────────────
+const GEMINI_PROMPT = `Extract all jastip orders from the Indonesian WhatsApp text below.
+Return a JSON array. Each element has: recipient{name,phone,addressRaw,provinsi,kota,kecamatan,kelurahan,kodepos}, items[{name,qty,unitPrice,totalPrice,rawWeightKg}], tag.
+${EXTRACTION_RULES}`;
 
-Each order object must follow this structure:
-{
-  "recipient": {
-    "name": "Extracted Name",
-    "phone": "Extracted Phone (numbers only)",
-    "addressRaw": "Full raw address extracted",
-    "provinsi": "",
-    "kota": "",
-    "kecamatan": "",
-    "kelurahan": "",
-    "kodepos": ""
-  },
-  "items": [
-    {
-      "name": "Item Name",
-      "qty": 1,
-      "unitPrice": 0,
-      "totalPrice": 0,
-      "rawWeightKg": 0
-    }
-  ],
-  "tag": "" 
-}
+// ─── Gemma: no native JSON mode, so we provide a strict template ──────────
+const GEMMA_PROMPT = `Extract jastip orders. Output ONLY a raw JSON array, no markdown.
+Template: [{"recipient":{"name":"","phone":"","addressRaw":"","provinsi":"","kota":"","kecamatan":"","kelurahan":"","kodepos":""},"items":[{"name":"","qty":1,"unitPrice":0,"totalPrice":0,"rawWeightKg":0}],"tag":""}]
+${EXTRACTION_RULES}
+Output raw JSON array only. No \`\`\`, no explanation.`;
 
-RULES:
-1. Handle multiple orders separated by newlines or markers.
-2. Common Item Formats (EXTREMELY DIVERSE):
-   - "2x Pocky Matcha @30,000" -> qty: 2, name: "Pocky Matcha", unitPrice: 30000
-   - "3 Indomie Goreng Rendang 9.000" -> qty: 3, name: "Indomie Goreng Rendang", totalPrice: 9000, unitPrice: 3000
-   - "Indomie Kuah Soto 9000" -> qty: 1, name: "Indomie Kuah Soto", unitPrice: 9000
-   - "2 Teh Botol 250ml 5k" -> qty: 2, name: "Teh Botol 250ml", totalPrice: 5000
-   - "3 Aqua 600ml @3k" -> qty: 3, name: "Aqua 600ml", unitPrice: 3000
-   - "Pocky Matcha - 1 - 25.000" -> qty: 1, name: "Pocky Matcha", unitPrice: 25000
-   - "- Starbucks Tumbler (2pcs)" -> qty: 2, name: "Starbucks Tumbler"
-   - "Chitato (15.5k)" -> qty: 1, name: "Chitato", unitPrice: 15500
-   - "3. Abon Sapi @50,000 (2)" -> qty: 2, name: "Abon Sapi", unitPrice: 50000
-   - "Pocky Matcha @30000 2x" -> qty: 2, name: "Pocky Matcha", unitPrice: 30000
-
-3. PRICE & QTY LOGIC:
-   - "k" suffix means thousand (e.g., 5k = 5000, 3.5k = 3500).
-   - "dots" (.) and "commas" (,) are often used as thousand separators in IDR (e.g., 10.000 or 10,000 = 10k).
-   - If you see "Qty Name Price", usually Price is the TOTAL for that quantity.
-   - If you see "@" or "each" or "/pc", Price is the UNIT price.
-   - If quantity is missing but a price exists, default qty to 1.
-   - If a line looks like item but has no price, extract the name and qty anyway (price = 0).
-
-4. Return ONLY a valid JSON array. No markdown, no preamble. Ensure name and items are never null.
-`;
+// ─── Gemini JSON Schema (used with responseSchema for structured output) ──
+const GEMINI_RESPONSE_SCHEMA = {
+    type: 'ARRAY' as const,
+    items: {
+        type: 'OBJECT' as const,
+        properties: {
+            recipient: {
+                type: 'OBJECT' as const,
+                properties: {
+                    name: { type: 'STRING' as const },
+                    phone: { type: 'STRING' as const },
+                    addressRaw: { type: 'STRING' as const },
+                    provinsi: { type: 'STRING' as const },
+                    kota: { type: 'STRING' as const },
+                    kecamatan: { type: 'STRING' as const },
+                    kelurahan: { type: 'STRING' as const },
+                    kodepos: { type: 'STRING' as const },
+                },
+            },
+            items: {
+                type: 'ARRAY' as const,
+                items: {
+                    type: 'OBJECT' as const,
+                    properties: {
+                        name: { type: 'STRING' as const },
+                        qty: { type: 'NUMBER' as const },
+                        unitPrice: { type: 'NUMBER' as const },
+                        totalPrice: { type: 'NUMBER' as const },
+                        rawWeightKg: { type: 'NUMBER' as const },
+                    },
+                },
+            },
+            tag: { type: 'STRING' as const },
+        },
+    },
+};
 
 export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]> {
     if (!API_KEY) {
@@ -83,45 +95,66 @@ export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]
 
     try {
         const model = genAI.getGenerativeModel({ model: LLM_MODEL });
+        const isGemini = AI_MODE === 'gemini';
 
-        // Configuration varies by mode
         const generationConfig: any = {
             temperature: 0.1,
+            topP: 0.85,
+            topK: 40,
         };
 
-        // Gemma doesn't support responseMimeType: 'application/json' via API yet
-        if (AI_MODE === 'gemini') {
+        if (isGemini) {
             generationConfig.responseMimeType = 'application/json';
+            generationConfig.responseSchema = GEMINI_RESPONSE_SCHEMA;
         }
 
+        const prompt = isGemini ? GEMINI_PROMPT : GEMMA_PROMPT;
+
         const result = await model.generateContent({
-            contents: [{ role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\nTEXT TO PARSE:\n${text}` }] }],
+            contents: [{
+                role: 'user',
+                parts: [{ text: `${prompt}\n\nINPUT:\n${text}` }]
+            }],
             generationConfig,
         });
 
         const responseRaw = result.response.text();
-        const responseText = AI_MODE === 'gemma' ? cleanJsonString(responseRaw) : responseRaw;
+        const responseText = isGemini ? responseRaw : cleanJsonString(responseRaw);
 
-        const parsed = JSON.parse(responseText);
+        let parsed;
+        try {
+            parsed = JSON.parse(responseText);
+        } catch (e) {
+            console.error('Initial JSON Parse failed, trying to rescue...', responseText);
+            // Emergency rescue for common LLM junk
+            const jsonMatch = responseText.match(/\[\s*\{[\s\S]*\}\s*\]/);
+            if (jsonMatch) {
+                parsed = JSON.parse(jsonMatch[0]);
+            } else {
+                throw e;
+            }
+        }
 
-        // Ensure it's an array
         const orders = Array.isArray(parsed) ? parsed : [parsed];
 
-        // Add UUIDs to items and match location data
+        // Process each order
         const ordersWithMetadata = await Promise.all(orders.map(async (order: any) => {
-            // Try to match location from the address
+            // Priority: Internal Location Lookup
+            // We initialize with empty values to satisfy "if cannot find, leave blank"
             let locationData = {
-                provinsi: order.recipient?.provinsi || '',
-                kota: order.recipient?.kota || '',
-                kecamatan: order.recipient?.kecamatan || '',
-                kelurahan: order.recipient?.kelurahan || '',
-                kodepos: order.recipient?.kodepos || '',
+                provinsi: '',
+                kota: '',
+                kecamatan: '',
+                kelurahan: '',
+                kodepos: '',
             };
 
+            // Only attempt lookup if addressRaw exists
             if (order.recipient?.addressRaw) {
                 try {
                     const matched = await matchLocation(order.recipient.addressRaw);
-                    if (matched && matched.confidence >= 0.3) {
+                    // We only use the lookup if it has decent confidence
+                    if (matched && matched.confidence >= 0.4) {
                         locationData = {
                             provinsi: matched.provinsi,
                             kota: matched.kota,
@@ -129,6 +162,11 @@ export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]
                             kelurahan: matched.kelurahan,
                             kodepos: matched.kodepos,
                         };
+                    } else {
+                        // If lookup fails or confidence is low, we follow user rule:
+                        // "If AI cannot find it, leave blank"
+                        // Note: We ignore any guesses the LLM might have put in order.recipient.provinsi etc.
+                        console.log(`Location lookup for "${order.recipient.addressRaw}" resulted in low confidence. Blanking fields.`);
                     }
                 } catch (err) {
                     console.warn('Location matching failed for LLM result:', err);
@@ -139,13 +177,34 @@ export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]
                 ...order,
                 recipient: {
                     ...order.recipient,
-                    ...locationData,
+                    ...locationData, // This overwrites any LLM hallucinations with either table data or blanks
                 },
-                items: (order.items || []).map((item: any) => ({
-                    ...item,
-                    id: crypto.randomUUID(),
-                    isManualTotal: item.totalPrice > 0 && item.unitPrice === 0,
-                })),
+                items: (order.items || []).map((item: any) => {
+                    const qty = item.qty > 0 ? item.qty : 1;
+                    let { unitPrice = 0, totalPrice = 0 } = item;
+
+                    // Case 1: AI gave totalPrice but not unitPrice → derive unitPrice
+                    if (totalPrice > 0 && unitPrice === 0) {
+                        unitPrice = Math.round(totalPrice / qty);
+                    }
+                    // Case 2: AI gave unitPrice but not totalPrice → derive totalPrice
+                    if (unitPrice > 0 && totalPrice === 0) {
+                        totalPrice = unitPrice * qty;
+                    }
+                    // Case 3: Both present but totalPrice doesn't match → unitPrice wins
+                    if (unitPrice > 0 && totalPrice > 0 && totalPrice !== unitPrice * qty) {
+                        totalPrice = unitPrice * qty;
+                    }
+
+                    return {
+                        ...item,
+                        id: crypto.randomUUID(),
+                        qty,
+                        unitPrice,
+                        totalPrice,
+                        isManualTotal: false,
+                    };
+                }),
                 metadata: {
                     potentialItemCount: countPotentialItems(text),
                     isAiParsed: true,
