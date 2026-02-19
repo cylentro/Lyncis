@@ -11,13 +11,14 @@ import {
 } from '@/components/ui/popover';
 
 interface TagAutocompleteProps {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   activeTags: string[];
   placeholder?: string;
 }
 
-export function TagAutocomplete({ value, onChange, activeTags, placeholder = "Contoh: BKK-MAY-2025" }: TagAutocompleteProps) {
+export function TagAutocomplete({ id = "tag-autocomplete", value, onChange, activeTags, placeholder = "Contoh: BKK-MAY-2025" }: TagAutocompleteProps) {
   const [open, setOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
@@ -87,7 +88,7 @@ export function TagAutocomplete({ value, onChange, activeTags, placeholder = "Co
         <PopoverAnchor asChild>
           <div className="relative w-full">
             <Input
-              id="tag-autocomplete"
+              id={id}
               value={value}
               onChange={(e) => {
                 onChange(e.target.value);

@@ -73,6 +73,13 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
     getParserConfig().then(setConfig);
   }, []);
 
+  // Auto-reset when all parsed items are deleted manually
+  useEffect(() => {
+    if (parsedOrders.length === 0 && isInputCollapsed) {
+      setIsInputCollapsed(false);
+    }
+  }, [parsedOrders.length, isInputCollapsed]);
+
   // Helper to format numbers with thousand separators
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('id-ID').format(num);
@@ -724,11 +731,11 @@ Pesanan:
                             )}
                           </div>
                           
-                          <div className="flex items-center gap-2 ml-1 shrink-0">
+                          <div className="flex items-center gap-2 ml-1 shrink-0 group-hover:opacity-0 transition-all duration-200">
                             {order.metadata?.isAiParsed && (
                               <Badge variant="outline" className="text-[8px] px-1 h-3.5 bg-amber-50 text-amber-600 border-amber-200 uppercase font-black tracking-tighter">AI</Badge>
                             )}
-                            <div className="text-[10px] font-black text-muted-foreground/30 font-mono tracking-widest group-hover:opacity-0 transition-opacity uppercase">
+                            <div className="text-[10px] font-black text-muted-foreground/30 font-mono tracking-widest uppercase">
                               #{(idx + 1).toString().padStart(2, '0')}
                             </div>
                           </div>
@@ -816,6 +823,7 @@ Pesanan:
                     </Label>
                   </div>
                   <TagAutocomplete 
+                    id="whatsapp-tag-autocomplete"
                     value={defaultTag}
                     onChange={setDefaultTag}
                     activeTags={activeTags}

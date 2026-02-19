@@ -170,6 +170,7 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
             <div className="px-1 text-sm font-black text-primary uppercase tracking-wider">{formData.tag || 'General'}</div>
         ) : (
             <TagAutocomplete
+              id="manual-tag-autocomplete"
               value={formData.tag}
               onChange={updateTag}
               activeTags={activeTags}

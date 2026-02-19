@@ -45,9 +45,8 @@ export function useActiveTags() {
  */
 export function useAllTags() {
     return useLiveQuery(async () => {
-        const orders = await db.orders.toArray();
-        const tags = new Set(orders.map((o) => o.tag).filter(Boolean));
-        return Array.from(tags).sort();
+        const tags = await db.orders.orderBy('tag').uniqueKeys();
+        return (tags as string[]).filter(Boolean).sort();
     }, []);
 }
 

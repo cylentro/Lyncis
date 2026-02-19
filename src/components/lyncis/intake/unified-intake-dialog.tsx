@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { motion } from 'framer-motion';
 import {
@@ -26,7 +26,7 @@ import { LocationAutocomplete } from './location-autocomplete';
 import { TagAutocomplete } from './tag-autocomplete';
 import { OrderFormContent } from '../bucket/order-form-content';
 import { cn } from '@/lib/utils';
-import { useEffect } from 'react';
+import { useActiveTags } from '@/hooks/use-lyncis-db';
 import { getParserConfig } from '@/lib/config-actions';
 
 // ─── Props ──────────────────────────────────────────────────
@@ -108,10 +108,28 @@ export function UnifiedIntakePanel({
     });
   }, []);
 
-  // Filter tags that have active (unassigned) orders
-  const activeTags = allTagsData
-    .filter((t) => t.unassigned > 0)
-    .map((t) => t.name); // Returns string[] for autocomplete
+  // Get active tags (those with ongoing orders) from the database
+  const dbActiveTags = useActiveTags();
+  
+  // Combine DB active tags with prop tags that have unassigned items
+  const activeTags = useMemo(() => {
+    const tags = new Set<string>();
+    
+    // 1. Add tags from prop ONLY if they have unassigned orders
+    allTagsData
+      .filter(t => t.unassigned > 0)
+      .forEach(t => tags.add(t.name));
+    
+    // 2. Add tags from direct active DB hook
+    if (dbActiveTags) {
+      dbActiveTags.forEach(t => tags.add(t));
+    }
+    
+    // 3. Always include "General"
+    tags.add('General');
+    
+    return Array.from(tags).sort((a, b) => a.localeCompare(b));
+  }, [allTagsData, dbActiveTags]);
 
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {

@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { JastipOrder } from '@/lib/types';
 import { useEffect } from 'react';
 import { getParserConfig } from '@/lib/config-actions';
+import { TagAutocomplete } from './tag-autocomplete';
 
 interface ExcelUploadProps {
   onImport: (orders: Omit<JastipOrder, 'id'>[]) => Promise<void>;
@@ -190,11 +191,11 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
             <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
               Tag Default (Batch)
             </Label>
-            <Input
+            <TagAutocomplete
+              id="excel-tag-autocomplete"
               value={defaultTag}
-              onChange={(e) => setDefaultTag(e.target.value)}
-              placeholder="Contoh: BKK-MAY-2025"
-              className="h-10 bg-background rounded-lg border-muted-foreground/20 text-sm font-medium"
+              onChange={setDefaultTag}
+              activeTags={activeTags}
             />
           </div>
 

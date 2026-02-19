@@ -6,8 +6,22 @@ import { matchLocation } from '@/lib/location-matcher';
 import { countPotentialItems } from '@/lib/whatsapp-parser';
 
 const API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const LLM_MODEL = process.env.LLM_MODEL || process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const AI_MODE = (process.env.AI_MODE || 'gemini').toLowerCase();
+
 const genAI = new GoogleGenerativeAI(API_KEY);
+
+/**
+ * Removes markdown code blocks and trims whitespace from a string.
+ */
+function cleanJsonString(text: string): string {
+    let cleaned = text.trim();
+    // Match both ```json and plain ```
+    if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?\s*```$/, '');
+    }
+    return cleaned.trim();
+}
 
 const SYSTEM_PROMPT = `
 You are an expert data extractor for an Indonesian Jastip (Jasa Titip) application.
@@ -68,17 +82,26 @@ export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]
     }
 
     try {
-        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+        const model = genAI.getGenerativeModel({ model: LLM_MODEL });
+
+        // Configuration varies by mode
+        const generationConfig: any = {
+            temperature: 0.1,
+        };
+
+        // Gemma doesn't support responseMimeType: 'application/json' via API yet
+        if (AI_MODE === 'gemini') {
+            generationConfig.responseMimeType = 'application/json';
+        }
 
         const result = await model.generateContent({
             contents: [{ role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\nTEXT TO PARSE:\n${text}` }] }],
-            generationConfig: {
-                temperature: 0.1, // Low temp for extraction
-                responseMimeType: 'application/json',
-            },
+            generationConfig,
         });
 
-        const responseText = result.response.text();
+        const responseRaw = result.response.text();
+        const responseText = AI_MODE === 'gemma' ? cleanJsonString(responseRaw) : responseRaw;
+
         const parsed = JSON.parse(responseText);
 
         // Ensure it's an array
@@ -124,7 +147,7 @@ export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]
                     isManualTotal: item.totalPrice > 0 && item.unitPrice === 0,
                 })),
                 metadata: {
-                    potentialItemCount: countPotentialItems(text), // Simplified: count against whole text or relevant block if we could split it
+                    potentialItemCount: countPotentialItems(text),
                     isAiParsed: true,
                 },
                 status: 'unassigned',

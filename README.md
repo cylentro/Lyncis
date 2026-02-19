@@ -113,6 +113,8 @@ src/
 - **Adaptive UI Logic**: Inline field-level warnings for missing phone, address, or items (✅ Complete)
 - **Smart Parsing**: Intelligent AI fallback with greedy regex priority (✅ Complete)
 - **Workflow Clarity**: Explicit Edit vs Review modes with context-aware button labels (✅ Complete)
+- **Configurable AI Engine**: Support for Gemini-1.5, Gemma-2, and Gemma-3 with markdown JSON fallback (✅ Complete)
+- **Intake UI Polish**: Auto-reset WhatsApp extraction, hidden metadata on hover, and fixed Excel tag autocomplete (✅ Complete)
 
 **Next Up: Phase 3** 🚧
 - Multi-select state manager
