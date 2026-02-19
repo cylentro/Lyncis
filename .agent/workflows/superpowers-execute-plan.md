@@ -7,27 +7,30 @@ description: Executes an approved plan in small steps with verification after ea
 ## Persist (mandatory)
 You must write execution artifacts to disk (not IDE-only documents):
 
-- Append execution notes to: `artifacts/superpowers/execution.md`
-- Write the final summary to: `artifacts/superpowers/finish.md`
+- Append execution notes to: `artifacts/superpowers/execution-[topic].md`
+- Write the final summary to: `artifacts/superpowers/finish-[topic].md`
 
 Requirements:
 1) Ensure the folder `artifacts/superpowers/` exists (create it if needed).
-2) After EACH completed plan step, append a note to `artifacts/superpowers/execution.md`.
-3) At the end, write the final summary to `artifacts/superpowers/finish.md`.
+2) After EACH completed plan step, append a note to `artifacts/superpowers/execution-[topic].md`.
+3) At the end, write the final summary to `artifacts/superpowers/finish-[topic].md`.
 4) After writing, confirm the files exist by listing `artifacts/superpowers/`.
 
 If you are unable to write these files directly, use `python .agent/skills/superpowers-workflow/scripts/write_artifact.py --path <target>` to persist the content.
 
+[topic] must be the same with the plan's topic
 
 ## Preconditions (do not skip)
 1) The user must have replied **APPROVED** to a written plan.
 2) The approved plan must exist on disk at:
-   - `artifacts/superpowers/plan.md`
+   - `artifacts/superpowers/plan-[iteration]-[topic].md`
 
-If `artifacts/superpowers/plan.md` does not exist:
+If `artifacts/superpowers/plan-[iteration]-[topic].md` does not exist:
 - Stop immediately.
 - Tell the user to run `/superpowers-write-plan` first.
 - Do not edit code.
+
+[topic] must be the same with the plan's topic
 
 ## Load the plan
 - Read `artifacts/superpowers/plan.md`.
@@ -74,12 +77,14 @@ Read and apply these skills when relevant:
 ## Finish (required)
 At the end:
 1) Run a review pass (Blocker/Major/Minor/Nit).
-2) Write a final summary to `artifacts/superpowers/finish.md` including:
+2) Write a final summary to `artifacts/superpowers/finish-[topic].md` including:
    - Verification commands run + results
    - Summary of changes
    - Follow-ups (if any)
    - Manual validation steps (if applicable)
 3) Confirm the artifacts exist by listing `artifacts/superpowers/`.
 4) Update the plan checklist.
+
+[topic] must be the same with the plan's topic
 
 Stop after completing the finish step.

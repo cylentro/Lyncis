@@ -36,7 +36,7 @@ If `artifacts/superpowers/plan.md` does not exist:
 
 ## Load and analyze the plan
 
-1. Read `artifacts/superpowers/plan.md`
+1. Ask user to attach plan document
 2. Parse all plan steps
 3. Identify dependencies between steps:
    - Does Step 2 modify files created/changed by Step 1?
@@ -87,7 +87,7 @@ wait
      - Do NOT continue to next batch
 
 4. **Append to execution log**:
-   - Write batch summary to `artifacts/superpowers/execution.md`:
+   - Write batch summary to `artifacts/superpowers/execution-[topic].md`:
      ```markdown
      ## Batch N (Parallel Execution)
      - Step X: [SUCCESS/FAILED] - Files: [...] - Duration: Xs
@@ -97,6 +97,7 @@ wait
      - Step X: [command] -> [result]
      - Step Y: [command] -> [result]
      ```
+[topic] must be the same with the plan's topic
 
 5. **Move to next batch** (if all steps passed)
 
@@ -133,16 +134,17 @@ After all batches complete:
      - Fix any conflicts
 
 3. **Final artifacts**:
-   - Update `artifacts/superpowers/execution.md` with:
+   - Update `artifacts/superpowers/execution-[topic].md` with:
      - Total batches executed
      - Total steps completed
      - Total time saved vs sequential
      - All verification results
-   - Write `artifacts/superpowers/finish.md` with:
+   - Write `artifacts/superpowers/finish-[topic].md` with:
      - Summary of changes
      - Integration test results
      - Follow-up items (if any)
 
+[topic] must be the same with the plan's topic
 ---
 
 ## Example: 5-step plan with 2 batches
@@ -194,12 +196,13 @@ After all batches complete:
 ## Persist (mandatory)
 
 Write execution notes to disk:
-- Append batch summaries to: `artifacts/superpowers/execution.md`
-- Write final summary to: `artifacts/superpowers/finish.md`
+- Append batch summaries to: `artifacts/superpowers/execution-[topic].md`
+- Write final summary to: `artifacts/superpowers/finish-[topic].md`
 
 Ensure `artifacts/superpowers/` exists.
 Confirm files exist by listing `artifacts/superpowers/` when done.
 
+[topic] must be the same with the plan's topic
 ---
 
 ## Finish

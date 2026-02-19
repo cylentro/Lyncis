@@ -1,18 +1,29 @@
-'use client';
-
-import { JastipOrder, OrderStatus } from '@/lib/types';
+import { useState, useMemo } from 'react';
+import { 
+  Pencil, 
+  Trash2, 
+  Package, 
+  CheckCircle2, 
+  FileSpreadsheet, 
+  Search, 
+  ChevronRight, 
+  ChevronLeft,
+  X,
+  ExternalLink,
+  ChevronLast,
+  ChevronFirst,
+  AlertTriangle,
+  ShieldCheck,
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Input } from '@/components/ui/input';
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Pencil, Trash2, Package } from 'lucide-react';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 // ─── Status Badge Config ────────────────────────────────────
 
@@ -22,7 +33,7 @@ const STATUS_CONFIG: Record<
 > = {
   unassigned: { label: 'Bucket Baru', variant: 'secondary' },
   staged: { label: 'Siap Kirim', variant: 'default' },
-  processed: { label: 'outline', variant: 'outline' },
+  processed: { label: 'Selesai', variant: 'outline' },
 };
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -34,11 +45,6 @@ function formatCurrency(amount: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
-}
-
-function truncate(text: string, maxLength: number = 80): string {
-  if (!text) return '—';
-  return text.length > maxLength ? text.slice(0, maxLength) + '…' : text;
 }
 
 function getOrderTotal(order: JastipOrder): number {
@@ -55,6 +61,8 @@ interface OrderTableProps {
   onDeselectAll: () => void;
   onEdit: (order: JastipOrder) => void;
   onDelete: (order: JastipOrder) => void;
+  onViewDetails: (order: JastipOrder) => void;
+  onConfirm?: (order: JastipOrder) => void;
 }
 
 // ─── Component ──────────────────────────────────────────────
@@ -67,146 +75,425 @@ export function OrderTable({
   onDeselectAll,
   onEdit,
   onDelete,
+  onViewDetails,
+  onConfirm,
 }: OrderTableProps) {
+  // ── State ──
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus | 'needs-review'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+  const [jumpPage, setJumpPage] = useState('');
+
+  // ── Needs-review count ──
+  const needsReviewCount = useMemo(
+    () => orders.filter(o => o.metadata?.needsTriage || o.metadata?.parseWarning).length,
+    [orders]
+  );
+
+  // ── Filtered Data ──
+  const filteredOrders = useMemo(() => {
+    return orders.filter((o) => {
+      const matchesSearch = 
+        o.recipient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (o.recipient.phone && o.recipient.phone.includes(searchTerm)) ||
+        o.recipient.addressRaw.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (o.metadata?.sourceFileName?.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      if (statusFilter === 'needs-review') {
+        return matchesSearch && (o.metadata?.needsTriage || o.metadata?.parseWarning);
+      }
+      const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, searchTerm, statusFilter]);
+
+  // ── Pagination ──
+  const totalPages = Math.ceil(filteredOrders.length / pageSize) || 1;
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  
+  const paginatedOrders = useMemo(() => {
+    const start = (safeCurrentPage - 1) * pageSize;
+    return filteredOrders.slice(start, start + pageSize);
+  }, [filteredOrders, safeCurrentPage, pageSize]);
+
   const allSelected =
-    orders.length > 0 && orders.every((o) => selectedIds.has(o.id));
+    paginatedOrders.length > 0 && paginatedOrders.every((o) => selectedIds.has(o.id));
 
   const handleSelectAllToggle = () => {
     if (allSelected) {
       onDeselectAll();
     } else {
-      onSelectAll(orders.map((o) => o.id));
+      onSelectAll(paginatedOrders.map((o) => o.id));
+    }
+  };
+
+  const handleJumpPage = (e: React.FormEvent) => {
+    e.preventDefault();
+    const pageNum = parseInt(jumpPage);
+    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+      setCurrentPage(pageNum);
+      setJumpPage('');
     }
   };
 
   if (orders.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-        <Package className="h-12 w-12 text-muted-foreground/40" />
+      <div className="flex flex-col items-center justify-center gap-3 py-24 text-center bg-muted/5 rounded-lg border-2 border-dashed">
+        <Package className="h-16 w-16 text-muted-foreground/20" />
         <div>
-          <p className="text-sm font-medium text-muted-foreground">
-            Belum ada pesanan
-          </p>
-          <p className="text-xs text-muted-foreground/70">
-            Mulai dengan menambahkan data.
-          </p>
+          <p className="text-base font-bold text-muted-foreground/80">Belum ada pesanan</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">Siapkan file Excel atau paste teks WhatsApp untuk memulai.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[40px]">
-              <Checkbox
-                checked={allSelected}
-                onCheckedChange={handleSelectAllToggle}
-                aria-label="Pilih semua"
-              />
-            </TableHead>
-            <TableHead>Nama Penerima</TableHead>
-            <TableHead className="hidden md:table-cell">
-              Alamat Lengkap
-            </TableHead>
-            <TableHead>Tag / Nama Event</TableHead>
-            <TableHead className="text-center">Items</TableHead>
-            <TableHead className="text-right">Total Harga</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-[100px] text-right">Aksi</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orders.map((order) => (
-            <TableRow
-              key={order.id}
-              data-state={selectedIds.has(order.id) ? 'selected' : undefined}
+    <div className="relative flex flex-col h-[calc(100vh-120px)] min-h-[500px] w-full bg-background border border-border/80 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300">
+      {/* ── Filter Bar (Sticky Top) ── */}
+      <div className="sticky top-0 z-30 flex flex-col md:flex-row items-center gap-4 p-4 border-b bg-background/95 backdrop-blur-md">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Cari nama, HP, alamat, atau batch..." 
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="pl-9 bg-muted/50 focus-visible:ring-primary/20 h-10 rounded-xl border-border/50 transition-all focus:bg-background"
+          />
+          {searchTerm && (
+            <button 
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground active:scale-90 transition-all"
             >
-              <TableCell>
-                <Checkbox
-                  checked={selectedIds.has(order.id)}
-                  onCheckedChange={() => onToggleSelect(order.id)}
-                  aria-label={`Pilih pesanan ${order.recipient.name}`}
-                />
-              </TableCell>
-              <TableCell className="font-medium">
-                {order.recipient.name || '—'}
-              </TableCell>
-              <TableCell className="hidden max-w-[400px] md:table-cell">
-                <span className="text-muted-foreground text-sm">
-                  {truncate(order.recipient.addressRaw)}
-                </span>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className="text-xs">
-                  {order.tag || '—'}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-center">
-                {order.items.length}
-              </TableCell>
-              <TableCell className="text-right font-mono text-sm">
-                {formatCurrency(getOrderTotal(order))}
-              </TableCell>
-              <TableCell>
-                <StatusBadge status={order.status} />
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => onEdit(order)}
-                    aria-label="Edit pesanan"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => onDelete(order)}
-                    aria-label="Hapus pesanan"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-xl border border-border/50">
+          {(['all', 'unassigned', 'staged', 'processed'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => {
+                setStatusFilter(s);
+                setCurrentPage(1);
+              }}
+              className={cn(
+                "px-3 py-1.5 text-[10px] font-black rounded-lg transition-all uppercase tracking-[0.1em]",
+                statusFilter === s 
+                  ? "bg-background shadow-md text-primary ring-1 ring-border" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {s === 'all' ? 'Semua' : STATUS_CONFIG[s].label}
+            </button>
           ))}
-        </TableBody>
-      </Table>
+          {/* Needs Review tab — only shown when there are pending orders */}
+          {needsReviewCount > 0 && (
+            <button
+              onClick={() => {
+                setStatusFilter('needs-review');
+                setCurrentPage(1);
+              }}
+              className={cn(
+                "px-3 py-1.5 text-[10px] font-black rounded-lg transition-all uppercase tracking-[0.1em] flex items-center gap-1.5",
+                statusFilter === 'needs-review'
+                  ? "bg-amber-500 shadow-md text-white ring-1 ring-amber-400"
+                  : "text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+              )}
+            >
+              <AlertTriangle className="h-3 w-3" />
+              Perlu Review
+              <span className={cn(
+                "inline-flex items-center justify-center h-4 w-auto min-w-4 px-1 rounded-full text-[9px] font-black leading-none translate-y-[0.5px]",
+                statusFilter === 'needs-review' ? "bg-white/30 text-white" : "bg-amber-100 text-amber-700"
+              )}>
+                {needsReviewCount}
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Table content Area ── */}
+      <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-muted-foreground/10 hover:scrollbar-thumb-muted-foreground/20 bg-muted/5">
+        <Table className="relative w-full border-separate border-spacing-0">
+          <TableHeader className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b">
+            <TableRow className="hover:bg-transparent border-b">
+              <TableHead className="w-[48px] px-4">
+                <Checkbox checked={allSelected} onCheckedChange={handleSelectAllToggle} />
+              </TableHead>
+              <TableHead className="min-w-[180px] text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4">Penerima & Batch</TableHead>
+              <TableHead className="hidden lg:table-cell min-w-[300px] text-[10px] font-black uppercase tracking-widest text-muted-foreground">Alamat</TableHead>
+              <TableHead className="w-[80px] text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">Items</TableHead>
+              <TableHead className="w-[150px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-8">Total</TableHead>
+              <TableHead className="w-[120px] text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status</TableHead>
+              <TableHead className="w-[140px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-6">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedOrders.map((order) => {
+              const isSelected = selectedIds.has(order.id);
+              const isWarning = !!(order.metadata?.needsTriage || order.metadata?.parseWarning);
+              return (
+                <TableRow 
+                  key={order.id} 
+                  className={cn(
+                    "group transition-all duration-200 border-b/50",
+                    isSelected ? "bg-primary/[0.03]" : "hover:bg-muted/10 active:bg-muted/20",
+                    isWarning && "border-l-2 border-l-amber-400 bg-amber-50/30 hover:bg-amber-50/50"
+                  )}
+                >
+                  <TableCell className="px-4">
+                    <Checkbox checked={isSelected} onCheckedChange={() => onToggleSelect(order.id)} />
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-black tracking-tight group-hover:text-primary transition-colors">{order.recipient.name || '—'}</span>
+                      <span className="text-xs text-muted-foreground font-mono font-bold opacity-80 leading-none">{order.recipient.phone || '—'}</span>
+                      {order.metadata?.sourceFileName && (
+                        <div className="flex items-center gap-1 mt-1 px-1.5 py-0 bg-primary/[0.04] text-primary/70 rounded-full w-fit border border-primary/10">
+                          <FileSpreadsheet className="h-2.5 w-2.5 shrink-0" />
+                          <span className="text-[8px] font-black uppercase tracking-tight truncate max-w-[120px]">
+                            {order.metadata.sourceFileName}
+                          </span>
+                        </div>
+                      )}
+                      {isWarning && (
+                        <div className="flex items-center gap-1 mt-0.5 px-1.5 py-0 bg-amber-100 text-amber-700 rounded-full w-fit border border-amber-200">
+                          <AlertTriangle className="h-2.5 w-2.5 shrink-0" />
+                          <span className="text-[8px] font-black uppercase tracking-tight">
+                            {order.metadata?.parseWarning ? 'Cek Barang' : 'Perlu Review'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell max-w-[400px]">
+                    <div className="text-xs text-muted-foreground/90 font-medium leading-relaxed italic line-clamp-2 max-w-[350px]">
+                      {order.recipient.addressRaw || '—'}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="inline-flex items-center justify-center p-1 px-2.5 bg-muted/40 rounded-lg border border-border/40">
+                      <span className="font-mono text-[11px] font-black">{order.items.length}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm font-black pr-8 text-foreground/80">
+                    {formatCurrency(getOrderTotal(order))}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge order={order} />
+                  </TableCell>
+                  <TableCell className="text-right pr-4">
+                    <div className="flex items-center justify-end gap-1.5">
+                      
+                      {/* Prioritize Review action if triage is needed, else show Confirm if unassigned */}
+                      {order.metadata?.needsTriage ? (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-amber-600 hover:bg-amber-100/60 transition-all border border-transparent hover:border-amber-200" 
+                          onClick={() => onEdit(order)}
+                          title="Review Pesanan"
+                        >
+                          <AlertTriangle className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        onConfirm && order.status === 'unassigned' && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-green-600 hover:bg-green-100/50 transition-all border border-transparent hover:border-green-200" 
+                            onClick={() => onConfirm(order)}
+                            title="Siap Kirim"
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                          </Button>
+                        )
+                      )}
+
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all text-muted-foreground" 
+                        onClick={() => onViewDetails(order)}
+                        title="Lihat Detail"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 hover:bg-muted text-muted-foreground transition-all" 
+                        onClick={() => onEdit(order)}
+                        title="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10 transition-all border border-transparent hover:border-destructive/20" 
+                        onClick={() => onDelete(order)}
+                        title="Hapus"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* ── Action Pagination (Sticky Bottom) ── */}
+      <div className="sticky bottom-0 z-30 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t bg-background/95 backdrop-blur-md shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
+        <div className="flex items-center gap-4">
+            <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 px-3 py-1.5 bg-muted/30 rounded-lg">
+                <span className="text-foreground">{filteredOrders.length}</span> Pesanan
+            </div>
+            
+            <div className="flex items-center gap-2">
+                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">Tampilkan:</span>
+                <Select
+                    value={pageSize.toString()}
+                    onValueChange={(v) => {
+                        setPageSize(parseInt(v));
+                        setCurrentPage(1);
+                    }}
+                >
+                    <SelectTrigger className="h-8 w-[70px] text-xs font-bold rounded-lg bg-muted/20 border-border/50">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="15">15</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <form onSubmit={handleJumpPage} className="flex items-center gap-2">
+            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider whitespace-nowrap">Ke Halaman:</span>
+            <Input 
+                value={jumpPage}
+                onChange={(e) => setJumpPage(e.target.value)}
+                className="h-8 w-[60px] text-center font-bold text-xs p-1 rounded-lg bg-muted/20 border-border/50"
+                placeholder="..."
+            />
+          </form>
+
+          <div className="flex items-center gap-1.5 border-l pl-4 border-border/50">
+            <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="h-8 w-8 rounded-lg"
+            >
+                <ChevronFirst className="h-3.5 w-3.5" />
+            </Button>
+            <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="h-8 w-8 rounded-lg"
+            >
+                <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            
+            <div className="flex items-center gap-2 mx-2">
+                <span className="text-xs font-black px-3 py-1 bg-primary text-primary-foreground rounded-lg shadow-lg shadow-primary/20">{currentPage}</span>
+                <span className="text-[10px] font-black text-muted-foreground">DARI</span>
+                <span className="text-xs font-black text-muted-foreground">{totalPages}</span>
+            </div>
+
+            <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 rounded-lg"
+            >
+                <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+            <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 rounded-lg"
+            >
+                <ChevronLast className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 // ─── Status Badge ───────────────────────────────────────────
 
-function StatusBadge({ status }: { status: OrderStatus }) {
-  const config = STATUS_CONFIG[status];
-  
+function StatusBadge({ order }: { order: JastipOrder }) {
+  if (order.metadata?.needsTriage) {
+    return (
+      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold uppercase tracking-widest py-0.5 px-2.5">
+        Perlu Review
+      </Badge>
+    );
+  }
+
+  const { status } = order;
+
   if (status === 'processed') {
     return (
-      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800 text-xs">
-        Selesai / Terkirim
+      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800 text-[10px] font-bold uppercase tracking-widest py-0.5 px-2.5">
+        Selesai
       </Badge>
     );
   }
   
   if (status === 'staged') {
     return (
-      <Badge variant="default" className="bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-300 text-xs">
+      <Badge variant="default" className="bg-blue-600 text-white border-transparent hover:bg-blue-700 text-[10px] font-bold uppercase tracking-widest py-0.5 px-2.5 shadow-sm">
         Siap Kirim
       </Badge>
     );
   }
 
   return (
-    <Badge variant={config.variant} className="text-xs">
-      {config.label}
+    <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-widest py-0.5 px-2.5 bg-muted/50 border-border/50">
+      Bucket Baru
     </Badge>
   );
 }
+
+import { JastipOrder, OrderStatus } from '@/lib/types';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';

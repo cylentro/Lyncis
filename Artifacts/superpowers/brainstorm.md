@@ -1,27 +1,35 @@
-# Superpowers Brainstorm: Adhering to Database Names
+# Brainstorming: Order Detail Consolidation
 
 ## Goal
-Ensure the location matcher returns the exact strings from the `location.json` database, even when matching against variants in parentheses. Specifically for Jakarta Selatan (and others), we should not return a "shortened" or "cleaned" version of the name if the user provided an alias.
+Replace the bottom drawer for order details with the existing side sheet (used for editing) to ensure a unified and "complete" information display.
 
 ## Constraints
-- Return the full `subdistrict_name`, `district_name`, etc., as they appear in the JSON.
-- Maintain the "smart" matching that allows aliases like "setiabudi" to find the "Setia Budi (Setiabudi)" record.
-
-## Known context
-- Currently, I added `findBestDisplayName` which returns the specific variant matched.
-- The user's feedback "we should stick to the data that we have" indicates they prefer the canonical database strings.
+- Section-based layout to organize a large amount of data.
+- Maintain premium aesthetics (vibrant colors, glassmorphism, smooth transitions).
+- All fields from `JastipOrder` must be accounted for (Recipient details, Items, Logistics, Metadata).
 
 ## Risks
-- The full strings might be long/verbose (e.g., "Setia Budi (Setiabudi)"), but if that's what the data has, that's what we should use.
+- **Data Overload**: Showing too many inputs might be overwhelming. Use clear visual hierarchy and separators.
+- **State Management**: Ensure `formData` in `OrderEditSheet` properly synchronizes with all nested fields (Logistics).
 
-## Options (2–4)
-1. **Remove Variant Return Logic**: Keep the enhanced variant-aware scoring, but remove the `findBestDisplayName` helper and just return the original field from the database.
-2. **Prioritize Primary Name**: If a variant matches, return the primary name (the part before the parentheses) instead of the full string. (Contradicts "stick to data").
-3. **Keep Enhanced Scoring Only**: Ensure that if "Setiabudi" is typed, the score for "Setia Budi (Setiabudi)" is high enough to be selected, but the output remains the full string.
+## Information to Add (The "Complete" list)
+- **Recipient**: Add `kelurahan`.
+- **Logistics**: 
+  - Origin (Select)
+  - Packing Weight (KG)
+  - Dimensions (L x W x H)
+  - Automatically calculated: Volumetric Weight, Chargeable Weight.
+- **Metadata**: Display `sourceFileName` and sequence info.
 
 ## Recommendation
-**Option 1**: Revert the return value logic to use the original database strings, while keeping the improved regex and variant-aware scoring so that the matches are still found correctly.
+Enhance `OrderEditSheet` to be the "Master Detail" view/edit component. Organise it into:
+1. Tag/Event (Header)
+2. Recipient Information
+3. Item Breakdown
+4. Logistics & Weights (New)
 
-## Acceptance criteria
-- Input "kelurahan setiabudi" -> `kelurahan: "Setia Budi (Setiabudi)"`
-- Input "kelurahan setia budi" -> `kelurahan: "Setia Budi (Setiabudi)"` (if Jakarta is prioritized) or the exact match.
+## Acceptance Criteria
+- Eye icon (View Details) and Pencil icon (Edit) both open the Side Sheet.
+- Side Sheet displays all missing fields (Kelurahan, Logistics).
+- `OrderDetailDrawer` component is removed/deleted.
+- Calculations for Volumetric and Chargeable weights are implemented for convenience.

@@ -149,65 +149,65 @@
 ### PHASE 2 — The Smart Intake Zone (Intelligence Layer)
 
 #### Step 2.1: Build the Intake Zone Layout with Tabs
-- [ ] Two tabs with icons and labels
-- [ ] Tab switching works
-- [ ] Card wrapper with title
+- [x] Two tabs with icons and labels
+- [x] Tab switching works
+- [x] Card wrapper with title
 
 #### Step 2.2: Build the Excel Upload Component (Part 1 — File Parsing)
-- [ ] `xlsx` package installed
-- [ ] `parseExcelFile` function reads file, extracts headers + rows
-- [ ] Drag-and-drop zone styled
-- [ ] File input accepts `.xlsx`, `.xls`, `.csv`
-- [ ] Headers and row count shown after parse
-- [ ] Error state shown on parse failure
+- [x] `xlsx` package installed
+- [x] `parseExcelFile` function reads file, extracts headers + rows
+- [x] Drag-and-drop zone styled
+- [x] File input accepts `.xlsx`, `.xls`, `.csv`
+- [x] Headers and row count shown after parse
+- [x] Error state shown on parse failure
 
 #### Step 2.3: Build the Sticky Header Mapping System
-- [ ] Header hash: normalize, sort, join, Base64
-- [ ] `localStorage` read/write for mappings
-- [ ] Mapping dialog shows all Excel headers with dropdowns
-- [ ] Auto-populates if hash matches saved mapping
-- [ ] Preview of first 3 rows
-- [ ] "Simpan Mapping" saves to `localStorage`
-- [ ] Re-uploading same file format skips mapping dialog
+- [x] Header hash: normalize, sort, join, Base64
+- [x] `localStorage` read/write for mappings
+- [x] Mapping dialog shows all Excel headers with dropdowns
+- [x] Auto-populates if hash matches saved mapping
+- [x] Preview of first 3 rows
+- [x] "Simpan Mapping" saves to `localStorage`
+- [x] Re-uploading same file format skips mapping dialog
 
 #### Step 2.4: Build Excel-to-Orders Conversion
-- [ ] Maps string values to correct `JastipOrder` fields
-- [ ] Parses numeric fields safely (NaN → 0)
-- [ ] Sets defaults for unassigned/missing fields
-- [ ] `createdAt` set to current timestamp
-- [ ] `status` defaults to `'unassigned'`
-- [ ] Returns array of orders ready for `addOrders()`
+- [x] Maps string values to correct `JastipOrder` fields
+- [x] Parses numeric fields safely (NaN → 0)
+- [x] Sets defaults for unassigned/missing fields
+- [x] `createdAt` set to current timestamp
+- [x] `status` defaults to `'unassigned'`
+- [x] Returns array of orders ready for `addOrders()`
 
 #### Step 2.5: Wire Excel Upload End-to-End
-- [ ] Full file → parse → hash → map → convert → import flow works
-- [ ] Saved mapping auto-applied on matching hash
-- [ ] Success toast shows imported count
-- [ ] File input cleared after import
-- [ ] Tag input allows setting default tag for batch
+- [x] Full file → parse → hash → map → convert → import flow works
+- [x] Saved mapping auto-applied on matching hash
+- [x] Success toast shows imported count
+- [x] File input cleared after import
+- [x] Tag input allows setting default tag for batch
 
 #### Step 2.6: Build WhatsApp Text Parser (Regex Engine)
-- [ ] Regex patterns for name (5+ variants)
-- [ ] Regex patterns for phone (5+ variants + number format)
-- [ ] Regex patterns for address (3+ variants + multi-line)
-- [ ] Regex patterns for items with qty + price
-- [ ] Multi-order detection (double newline / numbered lists)
-- [ ] `getParsingConfidence` returns 0-1 score
-- [ ] Test cases pass for all formats
+- [x] Regex patterns for name (5+ variants)
+- [x] Regex patterns for phone (5+ variants + number format)
+- [x] Regex patterns for address (3+ variants + multi-line)
+- [x] Regex patterns for items with qty + price
+- [x] Multi-order detection (double newline / numbered lists)
+- [x] `getParsingConfidence` returns 0-1 score
+- [x] Test cases pass for all formats
 
 #### Step 2.7: Build LLM Fallback (Gemini Flash Integration)
-- [ ] `@google/generative-ai` installed
-- [ ] System prompt returns `JastipOrder` JSON structure
-- [ ] Response parsed as JSON safely
-- [ ] Timeout (10s) and retry (1x) implemented
-- [ ] API errors handled gracefully (returns `[]`)
-- [ ] Works only when online (offline = skip)
-- [ ] API key loaded from `.env.local`
+- [x] `@google/generative-ai` installed
+- [x] System prompt returns `JastipOrder` JSON structure
+- [x] Response parsed as JSON safely
+- [x] Error handling & reporting: Distinguishes quota/network vs format errors (✅)
+- [x] API errors handled gracefully (suggests formatting tips on failure)
+- [x] Works only when online (offline = skip)
+- [x] API key loaded from `.env.local`
 
 #### Step 2.8: Build WhatsApp Paste UI Component
 - [x] Textarea with Bahasa placeholder
 - [x] "Parse" button triggers regex parser
 - [x] Confidence check: ≥0.6 shows preview, <0.6 prompts LLM
-- [x] Preview shows parsed order cards
+- [x] Preview shows parsed order cards (optimized with text wrapping, no elipsis)
 - [x] Fields editable in preview before import
 - [x] Confidence indicator (green ≥0.8, yellow ≥0.6, red <0.6)
 - [x] "Import ke Bucket" saves to DB
@@ -230,15 +230,15 @@
 ### PHASE 3 — Fulfillment & Batching Logic
 
 #### Step 3.1: Build the Multi-Select State Manager
-- [ ] `toggle` adds/removes from set
-- [ ] `selectAll` sets all provided IDs
-- [ ] `deselectAll` clears
+- [x] `toggle` adds/removes from set (✅ Implemented in Page component)
+- [x] `selectAll` sets all provided IDs
+- [x] `deselectAll` clears
 - [ ] `count` returns `Set.size`
-- [ ] Header checkbox selects/deselects all visible rows
+- [x] Header checkbox selects/deselects all visible rows
 
 #### Step 3.2: Build the Floating Action Bar (FAB)
 - [ ] Appears when ≥1 order selected
-- [ ] Disappears when 0 selected
+- [ ] Displaced when 0 selected
 - [ ] Shows selected count with Bahasa label
 - [ ] Total items count correct
 - [ ] Total weight correct
@@ -286,28 +286,28 @@
 ### PHASE 4 — Polish & PWA
 
 #### Step 4.1: Build the Indonesian Address Dictionary
-- [ ] All 38 Indonesian provinces listed
-- [ ] Major cities per province (at least top 5)
-- [ ] `getProvinces()` returns sorted list
-- [ ] `getCities()` returns cities for given province
-- [ ] `getKecamatan()` returns kecamatan list
-- [ ] `getKelurahan()` returns kelurahan list
-- [ ] `inferFromKecamatan()` does reverse lookup
+- [x] All 38 Indonesian provinces listed
+- [x] Major cities per province (at least top 5)
+- [x] `getProvinces()` returns sorted list
+- [x] `getCities()` returns cities for given province
+- [x] `getKecamatan()` returns kecamatan list
+- [x] `getKelurahan()` returns kelurahan list
+- [x] `inferFromKecamatan()` does reverse lookup
 
 #### Step 4.2: Add Address Autocomplete to Order Dialogs
-- [ ] Provinsi autocomplete works
-- [ ] Kota filters based on selected Provinsi
-- [ ] Kecamatan filters based on selected Kota
-- [ ] Kelurahan filters based on selected Kecamatan
-- [ ] Cascading reset on parent change
-- [ ] Auto-inference from unique Kecamatan
-- [ ] Integrated in both create and edit dialogs
+- [x] Provinsi autocomplete works
+- [x] Kota filters based on selected Provinsi
+- [x] Kecamatan filters based on selected Kota
+- [x] Kelurahan filters based on selected Kecamatan
+- [x] Cascading reset on parent change
+- [x] Auto-inference from unique Kecamatan
+- [x] Integrated in both create and edit dialogs
 
 #### Step 4.3: Bahasa Indonesia Labels Audit
-- [ ] `LABELS` object has all entries from both spec doc dictionaries
-- [ ] All component files import from `LABELS`
-- [ ] No hardcoded English strings in user-facing UI
-- [ ] Status badges use correct Bahasa labels
+- [x] `LABELS` object has all entries from both spec doc dictionaries
+- [x] All component files import from `LABELS`
+- [x] No hardcoded English strings in user-facing UI
+- [x] Status badges use correct Bahasa labels (Bucket Baru, Siap Kirim, Selesai)
 
 #### Step 4.4: PWA Configuration
 - [ ] `@serwist/next` installed and configured
@@ -318,13 +318,14 @@
 - [ ] Basic Lighthouse PWA checks pass
 
 #### Step 4.5: Final Polish — Responsive Design & Micro-Interactions
-- [ ] Mobile responsive (320px minimum)
-- [ ] Tablet responsive (768px)
-- [ ] Desktop full layout (1024px+)
+- [x] Mobile responsive (320px minimum)
+- [x] Tablet responsive (768px)
+- [x] Desktop full layout (1024px+)
+- [x] Layout Fix: Address text wrapping (no ellipsis/overlap) in table and preview (✅)
 - [ ] Loading skeletons for data fetch
 - [ ] Loading spinner for Excel/LLM parsing
-- [ ] Currency formatted as "Rp X.XXX" (Indonesian format)
-- [ ] Dates formatted in Indonesian locale
+- [x] Currency formatted as "Rp X.XXX" (Indonesian format)
+- [x] Dates formatted in Indonesian locale
 - [ ] Weight formatted as "X,XX kg"
 - [ ] FAB animation smooth
 - [ ] Error boundary wraps main content

@@ -64,8 +64,7 @@ RULES:
 
 export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]> {
     if (!API_KEY) {
-        console.error('Gemini API Key missing (GEMINI_API_KEY)');
-        return [];
+        throw new Error('Ekstraksi AI tidak tersedia (API Key belum dikonfigurasi).');
     }
 
     try {
@@ -141,8 +140,17 @@ export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]
         }));
 
         return ordersWithMetadata;
-    } catch (error) {
+    } catch (error: any) {
         console.error('LLM Parsing Error:', error);
-        return [];
+
+        // Throw a more user-friendly error or forward the specific API error
+        if (error.message?.includes('quota') || error.message?.includes('429')) {
+            throw new Error('Limit penggunaan AI tercapai. Silakan coba lagi nanti atau gunakan ekstraksi standar.');
+        }
+        if (error.message?.includes('fetch') || error.message?.includes('network')) {
+            throw new Error('Gagal terhubung ke layanan AI. Periksa koneksi internet Anda.');
+        }
+
+        throw new Error(error.message || 'Gagal memproses teks dengan AI.');
     }
 }

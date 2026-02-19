@@ -9,14 +9,18 @@ import {
   addOrders,
   updateOrder,
   deleteOrder,
+  bulkUpdateOrders,
+  deleteOrders,
+  markOrdersTriaged,
 } from '@/hooks/use-lyncis-db';
 import { JastipOrder } from '@/lib/types';
 import { OrderTable } from '@/components/lyncis/bucket/order-table';
 import { TagSidebar } from '@/components/lyncis/bucket/tag-sidebar';
-import { OrderEditDialog } from '@/components/lyncis/bucket/order-edit-dialog';
+import { OrderEditSheet } from '@/components/lyncis/bucket/order-edit-sheet';
 import { UnifiedIntakePanel } from '@/components/lyncis/intake/unified-intake-dialog';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Package, Plus, SlidersHorizontal, ChevronDown, Menu } from 'lucide-react';
+import { Package, Plus, SlidersHorizontal, ChevronDown, Menu, Check, Trash, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +41,7 @@ export default function BucketPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editingOrder, setEditingOrder] = useState<JastipOrder | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [intakePanelOpen, setIntakePanelOpen] = useState(false);
   const [deletingOrder, setDeletingOrder] = useState<JastipOrder | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -64,6 +69,12 @@ export default function BucketPage() {
     return Object.values(tagCounts).reduce((sum, c) => sum + c.total, 0);
   }, [tagCounts]);
 
+  // Orders that came from Excel and haven't been reviewed yet
+  const triageOrders = useMemo(
+    () => (orders ?? []).filter((o) => o.metadata?.needsTriage === true),
+    [orders]
+  );
+
   // ─── Handlers ───────────────────────────────────────────────
   const handleToggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -84,6 +95,13 @@ export default function BucketPage() {
 
   const handleEdit = useCallback((order: JastipOrder) => {
     setEditingOrder(order);
+    setIsReadOnly(false);
+    setEditDialogOpen(true);
+  }, []);
+
+  const handleViewDetails = useCallback((order: JastipOrder) => {
+    setEditingOrder(order);
+    setIsReadOnly(true);
     setEditDialogOpen(true);
   }, []);
 
@@ -95,6 +113,38 @@ export default function BucketPage() {
   const handleDelete = useCallback((order: JastipOrder) => {
     setDeletingOrder(order);
   }, []);
+
+  const handleConfirmOrder = useCallback(async (order: JastipOrder) => {
+    if (order.metadata?.needsTriage) {
+      toast.error('Pesanan ini perlu direview manual terlebih dahulu');
+      return;
+    }
+    await updateOrder(order.id, { status: 'staged' });
+    toast.success('Pesanan dikonfirmasi ke Siap Kirim');
+  }, []);
+
+  const handleBulkConfirm = useCallback(async () => {
+    const selectedOrders = (orders ?? []).filter(o => selectedIds.has(o.id));
+    const validIds = selectedOrders.filter(o => !o.metadata?.needsTriage).map(o => o.id);
+    const skippedCount = selectedIds.size - validIds.length;
+
+    if (validIds.length > 0) {
+      await bulkUpdateOrders(validIds, { status: 'staged' });
+      setSelectedIds(new Set());
+      toast.success(`${validIds.length} pesanan berhasil dikonfirmasi`);
+    }
+
+    if (skippedCount > 0) {
+      toast.warning(`${skippedCount} pesanan dilewati karena perlu review manual.`);
+    }
+  }, [selectedIds, orders]);
+
+  const handleBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    await deleteOrders(ids);
+    setSelectedIds(new Set());
+    toast.success(`${ids.length} pesanan berhasil dihapus`);
+  }, [selectedIds]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (deletingOrder) {
@@ -122,6 +172,18 @@ export default function BucketPage() {
     },
     []
   );
+
+  const handleApproveOne = useCallback(async (id: string) => {
+    await markOrdersTriaged([id]);
+    toast.success('Pesanan disetujui');
+  }, []);
+
+  const handleApproveAll = useCallback(async () => {
+    const ids = triageOrders.map((o) => o.id);
+    if (ids.length === 0) return;
+    await markOrdersTriaged(ids);
+    toast.success(`${ids.length} pesanan Excel telah disetujui`);
+  }, [triageOrders]);
 
   const handleTagSelect = useCallback((tag: string | null) => {
     setSelectedTag(tag);
@@ -216,15 +278,14 @@ export default function BucketPage() {
 
         {/* Floating Toggle Button removed (replaced by burger in header) */}
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto bg-background/50">
+        <main className="flex-1 overflow-hidden bg-muted/20">
           <div className={cn(
-            "w-full px-4 py-6 md:px-8 transition-all duration-500 [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] mx-auto",
-            isSidebarCollapsed ? "max-w-[98%] 2xl:max-w-[2560px]" : "max-w-[98%] 2xl:max-w-[1920px]"
+            "w-full px-4 py-4 md:px-8 h-full transition-all duration-500 [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] mx-auto font-sans",
+            isSidebarCollapsed ? "max-w-[99%] 2xl:max-w-[2560px]" : "max-w-[99%] 2xl:max-w-[1920px]"
           )}>
             <div className={cn(
-              "rounded-md border bg-background overflow-hidden transition-all duration-500",
-              isSidebarCollapsed && "ring-1 ring-primary/10"
+              "transition-all duration-500",
+              isSidebarCollapsed && "ring-1 ring-primary/5 rounded-3xl"
             )}>
               <OrderTable
                 orders={orders ?? []}
@@ -234,6 +295,8 @@ export default function BucketPage() {
                 onDeselectAll={handleDeselectAll}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onViewDetails={handleViewDetails}
+                onConfirm={handleConfirmOrder}
               />
             </div>
           </div>
@@ -241,12 +304,14 @@ export default function BucketPage() {
       </div>
 
       {/* ── Dialogs ────────────────────────────────────────── */}
-      <OrderEditDialog
+      <OrderEditSheet
         order={editingOrder}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         onSave={handleEditSave}
+        onApprove={handleApproveOne}
         activeTags={allTags ?? []}
+        readOnly={isReadOnly}
       />
 
       <UnifiedIntakePanel
@@ -283,6 +348,54 @@ export default function BucketPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* ── Bulk Actions Floating Bar ── */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60]"
+          >
+            <div className="flex items-center gap-4 bg-foreground/95 backdrop-blur-md px-6 py-3 rounded-full shadow-2xl border border-white/10 text-background min-w-[320px] justify-between">
+              <div className="flex items-center gap-3 pr-4 border-r border-white/10">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleDeselectAll}
+                  className="h-8 w-8 hover:bg-white/10 text-white rounded-full"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold leading-none">{selectedIds.size} terpilih</span>
+                  <span className="text-[9px] text-white/50 uppercase font-black tracking-widest mt-0.5">Bulk Actions</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="sm" 
+                  onClick={handleBulkConfirm}
+                  className="h-9 px-4 gap-1.5 bg-green-500 hover:bg-green-600 text-white border-0 font-bold text-xs rounded-full shadow-lg shadow-green-500/20 active:scale-95 transition-transform"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  Konfirmasi
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handleBulkDelete}
+                  className="h-9 px-4 gap-1.5 bg-destructive hover:bg-destructive/90 text-white border-0 font-bold text-xs rounded-full shadow-lg shadow-destructive/20 active:scale-95 transition-transform"
+                >
+                  <Trash className="h-3.5 w-3.5" />
+                  Hapus
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

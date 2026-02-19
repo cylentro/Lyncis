@@ -27,8 +27,9 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 ### Phase 4: Polish & PWA (🚧 In Progress)
 - **Indonesian Location Dictionary**: Integrated 80k+ records (BPS/Postal codes) with smart alias matching (✅ Complete)
 - **Location Autocomplete**: Smart address completion in intake and edit forms (✅ Complete)
-- **Enhanced WhatsApp Parser**: Support for IDR thousand separators, 'k' suffix, and heuristic-based AI fallback (✅ Complete)
-- **WhatsApp Edit Mode**: Sticky header and back button for polished order refinement (✅ Complete)
+- **Advanced WhatsApp Parser**: Span-based deduplication, inline header stripping, and Indonesian thousand separator support (✅ Complete)
+- **Intelligent AI Fallback**: Multi-pass filtering accepting regex results if heuristic item counts match (✅ Complete)
+- **Contextual UI Warnings**: Field-level inline feedback for missing phone, address, or unpriced items (✅ Complete)
 - **PWA configuration**: Offline capability for field use
 
 ## 🛠️ Tech Stack
@@ -104,12 +105,12 @@ src/
 
 **Phase 4: Partial** 🚧
 - Indonesian address dictionary with autocomplete (Integrated)
-- Smart WhatsApp Parser refinements (Confidence-based filtering)
-- Automated Test Suite: Regex parser validation with 20+ test cases (✅ Complete)
+- Smart WhatsApp Parser refinements (Span-based deduplication & greedy priority)
+- Automated Test Suite: Regex parser validation with 65+ test cases (✅ Complete)
 - **Security Hardening**: Migrated sensitive configuration to Server Actions & private Env Vars (✅ Complete)
 - **High-Contrast Notifications**: Themed Sonner toasts with color-coded borders, icons, and close buttons (✅ Complete)
-- **UI/UX Polished**: WhatsApp edit mode with sticky header and back button (✅ Complete)
-- **Smart Parsing**: Heuristic-based AI fallback triggering on item count mismatch (✅ Complete)
+- **Adaptive UI Logic**: Inline field-level warnings for missing phone, address, or items (✅ Complete)
+- **Smart Parsing**: Intelligent AI fallback with greedy regex priority (✅ Complete)
 
 **Next Up: Phase 3** 🚧
 - Multi-select state manager
@@ -136,5 +137,5 @@ This project is part of the Lyncis POC initiative.
 
 ---
 
-**Last Updated**: February 18, 2026  
+**Last Updated**: February 19, 2026  
 **Build Status**: ✅ Passing production build (Next.js 16)

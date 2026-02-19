@@ -2,13 +2,15 @@ import { useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, X, FileCheck, AlertCircle, Play } from 'lucide-react';
+import { Upload, X, FileCheck, AlertCircle, Play, SlidersHorizontal } from 'lucide-react';
 import { parseExcelFile, ExcelParseResult } from '@/lib/excel-parser';
 import { generateHeaderHash, loadSavedMapping } from '@/lib/header-mapper';
 import { convertRowsToOrders } from '@/lib/excel-to-orders';
-import { ColumnMappingDialog } from './column-mapping-dialog';
+import { ColumnMappingView } from './column-mapping-view';
 import { toast } from 'sonner';
 import { JastipOrder } from '@/lib/types';
+import { useEffect } from 'react';
+import { getParserConfig } from '@/lib/config-actions';
 
 interface ExcelUploadProps {
   onImport: (orders: Omit<JastipOrder, 'id'>[]) => Promise<void>;
@@ -23,6 +25,20 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
   const [error, setError] = useState<string | null>(null);
   const [mappingDialogOpen, setMappingDialogOpen] = useState(false);
   const [defaultTag, setDefaultTag] = useState('General');
+  const [activeTab, setActiveTab] = useState('manual');
+  
+  const [config, setConfig] = useState<{
+    enableAI: boolean;
+    enableRegex: boolean;
+    regexThreshold: number;
+    hasApiKey: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    getParserConfig().then(setConfig);
+  }, []);
+
+  const [view, setView] = useState<'upload' | 'mapping'>('upload');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,7 +72,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
       if (savedMapping) {
         toast.info('Format dikenali! Menggunakan pemetaan kolom yang tersimpan.');
       } else {
-        setMappingDialogOpen(true);
+        setView('mapping');
       }
     } catch (err: any) {
       setError(err.message || 'Gagal memproses file.');
@@ -69,13 +85,28 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
   const handleImport = async (mapping: Record<string, string>) => {
     if (!data) return;
     
+    setIsParsing(true);
+    const aiToastId = config?.enableAI ? toast.loading("Memproses data... AI akan digunakan jika mapping kolom kurang jelas.") : null;
+
     try {
-      const orders = convertRowsToOrders(data.rows, mapping, defaultTag);
+      const orders = await convertRowsToOrders(
+        data.rows, 
+        mapping, 
+        defaultTag, 
+        file?.name,
+        {
+          enableAI: config?.enableAI ?? true,
+          threshold: config?.regexThreshold || 0.8
+        }
+      );
+      if (aiToastId) toast.dismiss(aiToastId);
       await onImport(orders);
       toast.success(`Berhasil mengimpor ${orders.length} pesanan.`);
       clearFile();
     } catch (err) {
       toast.error('Gagal mengimpor data ke database.');
+    } finally {
+      setIsParsing(false);
     }
   };
 
@@ -84,7 +115,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
     if (mapping) {
       handleImport(mapping);
     } else {
-      setMappingDialogOpen(true);
+      setView('mapping');
     }
   };
 
@@ -104,62 +135,74 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
     setData(null);
     setHeaderHash('');
     setError(null);
+    setView('upload');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  if (view === 'mapping' && data) {
+    return (
+      <ColumnMappingView
+        headers={data.headers}
+        rows={data.rows}
+        headerHash={headerHash}
+        onConfirm={handleImport}
+        onCancel={() => setView('upload')}
+      />
+    );
+  }
+
   if (file && !error && !isParsing && data) {
     return (
-      <div className="w-full space-y-6">
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-3 px-4 py-2 border rounded-md bg-muted/20 border-border">
-            <FileCheck className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium">{file.name}</span>
+      <div className="w-full space-y-8 py-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+             <FileCheck className="h-8 w-8 text-primary" />
+          </div>
+          <div className="text-center">
+            <h3 className="text-sm font-bold">{file.name}</h3>
+            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-1">
+              {data.rows.length} Baris Terdeteksi
+            </p>
+          </div>
+          
+          <div className="flex gap-2 mt-2">
             <Button
               variant="ghost"
-              size="icon"
-              className="h-6 w-6 rounded-md hover:bg-destructive/10 hover:text-destructive"
+              size="sm"
+              className="text-muted-foreground hover:text-destructive text-[10px] font-bold h-8 px-3"
               onClick={clearFile}
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 mr-1.5" /> Ganti File
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-primary text-[10px] font-bold h-8 px-3"
+              onClick={() => setView('mapping')}
+            >
+              <SlidersHorizontal className="h-4 w-4 mr-1.5" /> Atur Kolom
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {data.rows.length} baris terdeteksi
-          </p>
         </div>
 
-        <div className="space-y-4 max-w-sm mx-auto">
-          <div>
-            <Label className="text-xs font-semibold mb-1.5 block">
-              Tag Default (untuk semua baris)
+        <div className="space-y-6 bg-muted/30 p-5 rounded-2xl border border-border/50">
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+              Tag Default (Batch)
             </Label>
             <Input
               value={defaultTag}
               onChange={(e) => setDefaultTag(e.target.value)}
               placeholder="Contoh: BKK-MAY-2025"
-              className="h-9"
+              className="h-10 bg-background rounded-lg border-muted-foreground/20 text-sm font-medium"
             />
           </div>
 
-          <div className="flex gap-2">
-            <Button variant="outline" className="flex-1 h-10" onClick={() => setMappingDialogOpen(true)}>
-              Atur Pemetaan
-            </Button>
-            <Button className="flex-1 h-10 font-bold" onClick={startImportWithCurrentMapping}>
-              <Play className="h-4 w-4 mr-2" />
-              Gas Impor
-            </Button>
-          </div>
+          <Button className="w-full h-11 font-bold shadow-lg shadow-primary/20" onClick={startImportWithCurrentMapping}>
+            <Play className="h-4 w-4 mr-2" />
+            Gas Impor Sekarang
+          </Button>
         </div>
-
-        <ColumnMappingDialog
-          open={mappingDialogOpen}
-          onOpenChange={setMappingDialogOpen}
-          headers={data.headers}
-          rows={data.rows}
-          headerHash={headerHash}
-          onConfirm={handleImport}
-        />
       </div>
     );
   }

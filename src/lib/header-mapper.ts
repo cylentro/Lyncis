@@ -41,8 +41,8 @@ export function saveMappingForHash(hash: string, mapping: Record<string, string>
 export const TARGET_FIELDS = [
     { key: 'recipient.name', label: 'Nama Penerima' },
     { key: 'recipient.phone', label: 'No. Telepon' },
-    { key: 'recipient.addressRaw', label: 'Alamat Lengkap' },
-    { key: 'items[0].name', label: 'Nama Barang' },
+    { key: 'recipient.addressRaw', label: 'Alamat Lengkap (Smart Extract)' },
+    { key: 'items[0].name', label: 'Nama Barang (Smart Extract)' },
     { key: 'items[0].qty', label: 'Qty' },
     { key: 'items[0].unitPrice', label: 'Harga Satuan' },
     { key: 'items[0].totalPrice', label: 'Total Harga' },

@@ -47,5 +47,11 @@ export interface JastipOrder {
     metadata?: {
         potentialItemCount?: number;
         isAiParsed?: boolean;
+        sourceFileName?: string;
+        isVerified?: boolean;
+        /** True for orders imported from Excel that haven't been reviewed yet */
+        needsTriage?: boolean;
+        /** True when one or more items could not be fully parsed (e.g. missing price) */
+        parseWarning?: boolean;
     };
 }

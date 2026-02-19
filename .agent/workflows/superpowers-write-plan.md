@@ -43,10 +43,13 @@ If the user replies APPROVED:
 After generating the plan content above, you MUST write it to disk:
 
 1) Copy the full plan markdown output.
-2) Run:
+2) plan filename should follow this format: plan-[iteration]-[topic]
+   2.a) iteration start from 1 and incremental
+   2.b) topic is depend on the plan that is created
+3) Run:
 
 ```bash
-python .agent/skills/superpowers-workflow/scripts/write_artifact.py --path artifacts/superpowers/plan.md
+python .agent/skills/superpowers-workflow/scripts/write_artifact.py --path artifacts/superpowers/plan-[iteration]-[topic].md
 
 ```
 

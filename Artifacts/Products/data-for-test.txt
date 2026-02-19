@@ -1,16 +1,62 @@
-2x Pocky Matcha @30000 
+============================================================
+WHATSAPP PARSER TEST DATA
+============================================================
+
+------------------------------------------------------------
+SCENARIO 1: Unlabeled block — qty×name @price + qty name price
+------------------------------------------------------------
+2x Pocky Matcha @30000
 3 Chitato 45000
 Budi
 (+6281)234-567-890
 Jl. Sudirman No. 1 kec. setiabudi
 
+Expected Result:
+Name: Budi
+Phone: 6281234567890
+Address: Jl. Sudirman No. 1 kec. setiabudi
+Province city district subdistrict zipcode: data based on kecamatan setiabudi
+Item 1: 
+  - Qty: 2 
+  - Item Name: Pocky Matcha 
+  - Item Price: 30000
+  - Total Price: 60000
+Item 2: 
+  - Qty: 3
+  - Item Name: Chitato
+  - Item Price: 45000
+  - Total Price: 135000
 
-2x Pocky Matcha @30000 
-3 Chitato 45000
+
+------------------------------------------------------------
+SCENARIO 2: Same items, international phone format
+------------------------------------------------------------
+2x Pocky Matcha @30000
 Budi
 +65-8123-(4567)
+3 Chitato 45000
 Buangkok avenue 1 #19-1928 kecamatan setiabudi kelurahan setia budi
 
+Expected Result:
+Name: Budi
+Phone: 6581234567
+Address: Buangkok avenue 1 #19-1928 kecamatan setiabudi kelurahan setia budi
+Province city district subdistrict zipcode: data based on kecamatan setiabudi kelurahan setia budi
+Item 1: 
+  - Qty: 2 
+  - Item Name: Pocky Matcha 
+  - Item Price: 30000
+  - Total Price: 60000
+Item 2: 
+  - Qty: 3
+  - Item Name: Chitato
+  - Item Price: 45000
+  - Total Price: 135000
+
+
+------------------------------------------------------------
+SCENARIO 3: Labeled contact + labeled order block
+------------------------------------------------------------
 chris
 telepon: 08123456901
 alamat taman duren sawit 13440
@@ -18,12 +64,472 @@ order:
 1 chitato @30k
 2 indomie @15000
 
+Expected Result:
+Name: chris
+Phone: 08123456901
+Address: taman duren sawit 13440
+Province city district subdistrict zipcode: data based on zipcode 13440
+Item 1: 
+  - Qty: 1 
+  - Item Name: chitato 
+  - Item Price: 30000
+  - Total Price: 30000
+Item 2: 
+  - Qty: 2
+  - Item Name: indomie
+  - Item Price: 15000
+  - Total Price: 30000
+
+
+------------------------------------------------------------
+SCENARIO 4: Fully labeled format (Nama/HP/Alamat/Pesanan)
+------------------------------------------------------------
 Nama: Satria
 HP: 08123456789
 Alamat: Jl. Prof. DR. Satrio No.Kav.18, Kuningan, Karet Kuningan, Kecamatan Setiabudi, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12940, Indonesia
-Pesanan: 
+Pesanan:
 2x Pocky Matcha @30000
 3 Indomie Goreng Rendang 9.000
 1 Indomie Kuah Soto 9.000
-2 Teh Botol 250ml 5k 
+2 Teh Botol 250ml 5k
 3 Aqua 600ml @3k
+
+Expected Result:
+Name: Satria
+Phone: 08123456789
+Address: Jl. Prof. DR. Satrio No.Kav.18, Kuningan, Karet Kuningan, Kecamatan Setiabudi, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12940, Indonesia
+Province city district subdistrict zipcode: data based on zipcode 12940
+Item 1: 
+  - Qty: 2 
+  - Item Name: Pocky Matcha 
+  - Item Price: 30000
+  - Total Price: 60000
+Item 2: 
+  - Qty: 3
+  - Item Name: Indomie Goreng Rendang
+  - Item Price: 9000
+  - Total Price: 27000
+Item 3: 
+  - Qty: 1
+  - Item Name: Indomie Kuah Soto
+  - Item Price: 9000
+  - Total Price: 9000
+Item 4: 
+  - Qty: 2
+  - Item Name: Teh Botol 250ml
+  - Item Price: 5000
+  - Total Price: 10000
+Item 5: 
+  - Qty: 3
+  - Item Name: Aqua 600ml
+  - Item Price: 3000
+  - Total Price: 9000
+
+
+------------------------------------------------------------
+SCENARIO 5: k-suffix prices (3.5k, 10k, 2.5k)
+------------------------------------------------------------
+Nama: Dewi
+HP: 081298765432
+Alamat: Jl. Gatot Subroto No.5, Karet Semanggi, Setiabudi, Jakarta Selatan 12930
+Pesanan:
+2x Mie Goreng @3.5k
+1 Teh Pucuk 2.5k
+3 Aqua 600ml @2k
+
+Expected Result:
+Name: Dewi
+Phone: 081298765432
+Address: Jl. Gatot Subroto No.5, Karet Semanggi, Setiabudi, Jakarta Selatan 12930
+Province city district subdistrict zipcode: data based on zipcode 12930
+Item 1: 
+  - Qty: 2 
+  - Item Name: Mie Goreng 
+  - Item Price: 3500
+  - Total Price: 7000
+Item 2: 
+  - Qty: 1
+  - Item Name: Teh Pucuk
+  - Item Price: 2500
+  - Total Price: 2500
+Item 3: 
+  - Qty: 3
+  - Item Name: Aqua 600ml
+  - Item Price: 2000
+  - Total Price: 6000
+
+
+------------------------------------------------------------
+SCENARIO 6: Dot thousand separator (21.000, 9.000)
+------------------------------------------------------------
+Nama: Rexlesis
+HP: 081234567891
+Alamat: Jl. Prof. DR. Satrio No.Kav.19, Kuningan, Karet Kuningan, Kecamatan Setiabudi, Kota Jakarta Selatan 12940
+Pesanan:
+2 ayam goreng @10k
+3x coca cola 21.000
+
+Expected Result:
+Name: Rexlesis
+Phone: 081234567891
+Address: Jl. Prof. DR. Satrio No.Kav.19, Kuningan, Karet Kuningan, Kecamatan Setiabudi, Kota Jakarta Selatan 12940
+Province city district subdistrict zipcode: data based on zipcode 12940
+Item 1: 
+  - Qty: 2 
+  - Item Name: ayam goreng 
+  - Item Price: 10000
+  - Total Price: 20000
+Item 2: 
+  - Qty: 3
+  - Item Name: coca cola
+  - Item Price: 21000
+  - Total Price: 63000
+
+
+------------------------------------------------------------
+SCENARIO 7: Comma thousand separator (30,000 / 15,000)
+------------------------------------------------------------
+Nama: Andi
+HP: 082112345678
+Alamat: Jl. Kebon Jeruk Raya No.27, Kebon Jeruk, Jakarta Barat 11530
+Pesanan:
+1x Nasi Goreng Spesial @30,000
+2 Es Teh Manis 15,000
+
+
+------------------------------------------------------------
+SCENARIO 8: Numbered list format
+------------------------------------------------------------
+Nama: Siti
+HP: 087812345678
+Alamat: Jl. Raya Bogor Km.25, Ciracas, Jakarta Timur 13740
+Pesanan:
+1. Chitato Sapi Panggang @12000 (2pcs)
+2. Pocky Matcha @30000
+3. Teh Botol Sosro @5000 (3pcs)
+
+Expected Result:
+Name: Siti
+Phone: 087812345678
+Address: Jl. Raya Bogor Km.25, Ciracas, Jakarta Timur 13740
+Province city district subdistrict zipcode: data based on zipcode 13740
+Item 1: 
+  - Qty: 2 
+  - Item Name: Chitato Sapi Panggang 
+  - Item Price: 12000
+  - Total Price: 24000
+Item 2: 
+  - Qty: 1
+  - Item Name: Pocky Matcha
+  - Item Price: 30000
+  - Total Price: 30000
+Item 3: 
+  - Qty: 3
+  - Item Name: Teh Botol Sosro
+  - Item Price: 5000
+  - Total Price: 15000
+
+
+------------------------------------------------------------
+SCENARIO 9: Bullet list format
+------------------------------------------------------------
+Nama: Hendra
+HP: 089612345678
+Alamat: Jl. Margonda Raya No.100, Depok, Jawa Barat 16424
+Pesanan:
+- Indomie Goreng 3500
+- Chitato 12000 x2
+- Aqua 600ml 3000
+
+Expected Result:
+Name: Hendra
+Phone: 089612345678
+Address: Jl. Margonda Raya No.100, Depok, Jawa Barat 16424
+Province city district subdistrict zipcode: data based on zipcode 16424
+Item 1: 
+  - Qty: 1 
+  - Item Name: Indomie Goreng 
+  - Item Price: 3500
+  - Total Price: 3500
+Item 2: 
+  - Qty: 2
+  - Item Name: Chitato
+  - Item Price: 12000
+  - Total Price: 24000
+Item 3: 
+  - Qty: 1
+  - Item Name: Aqua 600ml
+  - Item Price: 3000
+  - Total Price: 3000
+
+
+------------------------------------------------------------
+SCENARIO 10: Item @ Price Qty (reversed order)
+------------------------------------------------------------
+Nama: Rina
+HP: 081312345678
+Alamat: Jl. Daan Mogot No.55, Kalideres, Jakarta Barat 11840
+Pesanan:
+Pocky Matcha @30000 2x
+Teh Botol @5000 3x
+
+
+------------------------------------------------------------
+SCENARIO 11: Item Qty Price (name first, then qty, then price)
+------------------------------------------------------------
+Nama: Fajar
+HP: 085612345678
+Alamat: Jl. Raya Serpong No.7, Tangerang Selatan, Banten 15310
+Pesanan:
+Indomie Goreng Rendang 3 9000
+Aqua 600ml 6 18000
+
+Expected Result:
+Name: Fajar
+Phone: 085612345678
+Address: Jl. Raya Serpong No.7, Tangerang Selatan, Banten 15310
+Province city district subdistrict zipcode: data based on zipcode 15310
+Item 1: 
+  - Qty: 3 
+  - Item Name: Indomie Goreng Rendang 
+  - Item Price: 9000
+  - Total Price: 27000
+Item 2: 
+  - Qty: 6
+  - Item Name: Aqua 600ml
+  - Item Price: 3000
+  - Total Price: 18000
+
+------------------------------------------------------------
+SCENARIO 12: ⚠ MISSING PRICE — should trigger parseWarning
+------------------------------------------------------------
+Nama: Rexles
+HP: 081234567890
+Alamat: Jl. Prof. DR. Satrio No.Kav.18, Kuningan, Karet Kuningan, Kecamatan Setiabudi
+Pesanan:
+2 ayam goreng
+3x coca cola
+
+Expected Result:
+Name: Rexles
+Phone: 081234567890
+Address: Jl. Prof. DR. Satrio No.Kav.18, Kuningan, Karet Kuningan, Kecamatan Setiabudi
+Province city district subdistrict zipcode: data based on kecamatan kelurahan karet kuninggan, kecama setiabudi 
+Item 1: 
+  - Qty: 2 
+  - Item Name: ayam goreng 
+  - Item Price: 10000
+  - Total Price: 20000
+Item 2: 
+  - Qty: 3
+  - Item Name: coca cola
+  - Item Price: 21000
+  - Total Price: 63000
+
+------------------------------------------------------------
+SCENARIO 13: ⚠ MISSING PHONE — should trigger parseWarning
+------------------------------------------------------------
+Nama: Tanpa HP
+Alamat: Jl. Sudirman No.1, Karet Semanggi, Setiabudi, Jakarta Selatan 12930
+Pesanan:
+1x Indomie Goreng @3500
+
+Expected Result:
+Name: Tanpa HP
+Phone: 
+Address: Jl. Sudirman No.1, Karet Semanggi, Setiabudi, Jakarta Selatan 12930
+Province city district subdistrict zipcode: data based on zipcode 12930
+Item 1: 
+  - Qty: 1 
+  - Item Name: Indomie Goreng 
+  - Item Price: 3500
+  - Total Price: 3500
+
+------------------------------------------------------------
+SCENARIO 14: ⚠ MISSING ADDRESS — should trigger parseWarning
+------------------------------------------------------------
+Nama: Tanpa Alamat
+HP: 081199998888
+Pesanan:
+2x Chitato @12000
+
+Expected Result:
+Name: Tanpa Alamat
+Phone: 081199998888
+Address: 
+Province city district subdistrict zipcode: data based on kecamatan Setiabudi
+Item 1: 
+  - Qty: 2 
+  - Item Name: Chitato 
+  - Item Price: 12000
+  - Total Price: 24000
+
+------------------------------------------------------------
+SCENARIO 15: ⚠ MISSING ITEMS — should trigger parseWarning
+------------------------------------------------------------
+Nama: Tanpa Barang
+HP: 081177776666
+Alamat: Jl. Gatot Subroto No.10, Karet Semanggi, Setiabudi, Jakarta Selatan 12930
+
+Expected Result:
+Name: Tanpa Barang
+Phone: 081177776666
+Address: Jl. Gatot Subroto No.10, Karet Semanggi, Setiabudi, Jakarta Selatan 12930
+Province city district subdistrict zipcode: data based on zipcode 12930
+
+------------------------------------------------------------
+SCENARIO 16: Mixed format in one block (labeled + unlabeled items)
+------------------------------------------------------------
+Nama: Bambang
+HP: 081355554444
+Alamat: Jl. Pemuda No.30, Rawamangun, Pulo Gadung, Jakarta Timur 13220
+Barang:
+- Chitato Sapi Panggang 12000
+2x Pocky Matcha @30000
+Indomie Goreng Rendang 3 9000
+
+Expected Result:
+Name: Bambang
+Phone: 081355554444
+Address: Jl. Pemuda No.30, Rawamangun, Pulo Gadung, Jakarta Timur 13220
+Province city district subdistrict zipcode: data based on zipcode 13220
+Item 1: 
+  - Qty: 1 
+  - Item Name: Chitato Sapi Panggang 
+  - Item Price: 12000
+  - Total Price: 12000
+Item 2: 
+  - Qty: 2
+  - Item Name: Pocky Matcha
+  - Item Price: 30000
+  - Total Price: 60000
+Item 3: 
+  - Qty: 3
+  - Item Name: Indomie Goreng Rendang
+  - Item Price: 9000
+  - Total Price: 27000
+
+------------------------------------------------------------
+SCENARIO 17: Price with Rp prefix
+------------------------------------------------------------
+Nama: Citra
+HP: 081266663333
+Alamat: Jl. Fatmawati Raya No.15, Cilandak, Jakarta Selatan 12420
+Pesanan:
+1x Nasi Padang @Rp 25.000
+2 Es Jeruk Rp 8.000
+3x Teh Manis Rp12000
+
+Expected Result:
+Name: Citra
+Phone: 081266663333
+Address: Jl. Fatmawati Raya No.15, Cilandak, Jakarta Selatan 12420
+Province city district subdistrict zipcode: data based on zipcode 12420
+Item 1: 
+  - Qty: 1 
+  - Item Name: Nasi Padang 
+  - Item Price: 25000
+  - Total Price: 25000
+Item 2: 
+  - Qty: 2
+  - Item Name: Es Jeruk
+  - Item Price: 8000
+  - Total Price: 16000
+Item 3: 
+  - Qty: 3
+  - Item Name: Teh Manis
+  - Item Price: 12000
+  - Total Price: 36000
+
+------------------------------------------------------------
+SCENARIO 18: Very long address (full Indonesian format)
+------------------------------------------------------------
+Nama: Dimas
+HP: 082233334444
+Alamat: Jl. Raya Ciputat No.45 RT 003 RW 007, Kelurahan Ciputat, Kecamatan Ciputat, Kota Tangerang Selatan, Banten 15411
+Pesanan:
+2x Aqua 1500ml @8000
+1 Pocky Strawberry @30000
+
+Expected Result:
+Name: Dimas
+Phone: 082233334444
+Address: Jl. Raya Ciputat No.45 RT 003 RW 007, Kelurahan Ciputat, Kecamatan Ciputat, Kota Tangerang Selatan, Banten 15411
+Province city district subdistrict zipcode: data based on zipcode 15411
+Item 1: 
+  - Qty: 2 
+  - Item Name: Aqua 1500ml 
+  - Item Price: 8000
+  - Total Price: 16000
+Item 2: 
+  - Qty: 1
+  - Item Name: Pocky Strawberry
+  - Item Price: 30000
+  - Total Price: 30000
+
+------------------------------------------------------------
+SCENARIO 19: Multiple orders in one paste (separator test)
+------------------------------------------------------------
+Nama: Order A
+HP: 081111111111
+Alamat: Jl. A No.1, Menteng, Jakarta Pusat 10310
+Pesanan: 1x Chitato @12000
+
+===
+
+Nama: Order B
+HP: 082222222222
+Alamat: Jl. B No.2, Gambir, Jakarta Pusat 10110
+Pesanan: 2x Pocky @30000
+
+---
+
+Nama: Order C
+HP: 083333333333
+Alamat: Jl. C No.3, Sawah Besar, Jakarta Pusat 10710
+Pesanan: 3 Aqua 600ml 9000
+
+Expected Result:
+Name: Order A
+Phone: 081111111111
+Address: Jl. A No.1, Menteng, Jakarta Pusat 10310
+Province city district subdistrict zipcode: data based on zipcode 10310
+Item 1: 
+  - Qty: 1 
+  - Item Name: Chitato 
+  - Item Price: 12000
+  - Total Price: 12000
+
+Name: Order B
+Phone: 082222222222
+Address: Jl. B No.2, Gambir, Jakarta Pusat 10110
+Province city district subdistrict zipcode: data based on zipcode 10110
+Item 1: 
+  - Qty: 2 
+  - Item Name: Pocky 
+  - Item Price: 30000
+  - Total Price: 60000
+
+Name: Order C
+Phone: 083333333333
+Address: Jl. C No.3, Sawah Besar, Jakarta Pusat 10710
+Province city district subdistrict zipcode: data based on zipcode 10710
+Item 1: 
+  - Qty: 3 
+  - Item Name: Aqua 600ml 
+  - Item Price: 9000
+  - Total Price: 27000
+
+
+------------------------------------------------------------
+EXCEL TEST DATA (for upload data jastip.xlsx reference)
+------------------------------------------------------------
+Row 1 — ⚠ MISSING PRICE (parseWarning expected):
+  Nama: Rexles | HP: 081234567890
+  Pesanan: "2 ayam goreng\n3x coca cola"
+  Expected: 2 items, both price=0, parseWarning=true
+
+Row 2 — PRICES PRESENT (no warning expected):
+  Nama: Rexlesis | HP: 081234567891
+  Pesanan: "2 ayam goreng @10k\n3x coca cola 21.000"
+  Expected: 2 items, ayam goreng price=10000, coca cola price=21000, parseWarning=false

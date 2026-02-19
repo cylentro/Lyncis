@@ -134,3 +134,23 @@ export async function deleteOrder(id: string): Promise<void> {
 export async function deleteOrders(ids: string[]): Promise<void> {
     await db.orders.bulkDelete(ids);
 }
+
+/**
+ * Mark a batch of orders as triaged (reviewed).
+ * Clears `needsTriage` and sets `isVerified: true` in a single transaction.
+ */
+export async function markOrdersTriaged(ids: string[]): Promise<void> {
+    await db.transaction('rw', db.orders, async () => {
+        for (const id of ids) {
+            const order = await db.orders.get(id);
+            if (!order) continue;
+            await db.orders.update(id, {
+                metadata: {
+                    ...order.metadata,
+                    needsTriage: false,
+                    isVerified: true,
+                },
+            });
+        }
+    });
+}

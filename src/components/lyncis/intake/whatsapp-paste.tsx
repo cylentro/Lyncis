@@ -79,7 +79,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
   };
 
   const handleSmartParse = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() || isParsing) return;
     setIsParsing(true);
     setIsWarningBatch(false);
     setEditingIndex(null);
@@ -106,17 +106,40 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
         const totalExtractedItems = regexResults.reduce((sum, o) => sum + (o.items?.length || 0), 0);
         const hasMissingItems = totalRawItems > totalExtractedItems;
 
-        // If Regex is very confident AND didn't miss items according to heuristic, use it immediately
-        if (regexResults.length > 0 && regexConfidence >= threshold && !hasMissingItems) {
+        // Accept regex results if we found at least one item,
+        // OR if regex found a valid order with contact info but genuinely no items in the text.
+        // Missing contact info (phone / address) is NOT a reason to use AI —
+        // it's shown as a "Review Diperlukan" warning badge on the card instead.
+        const regexFoundItems = totalExtractedItems > 0;
+        // Genuinely no items: potentialItemCount = 0, so we didn't MISS anything
+        const noItemsInText = totalRawItems === 0;
+        const hasAnyContact = regexResults.some(
+          o => o.recipient?.name || o.recipient?.phone || o.recipient?.addressRaw
+        );
+
+        if ((regexFoundItems && !hasMissingItems) || (noItemsInText && hasAnyContact)) {
           setParsedOrders(regexResults);
           setIsInputCollapsed(true);
-          toast.success(`Berhasil mengenali ${regexResults.length} pesanan`);
+          // If contact data is incomplete or no items, show a warning toast
+          const hasIncompleteContact = regexResults.some(
+            o => !o.recipient?.name || !o.recipient?.phone || !o.recipient?.addressRaw
+          );
+          const hasNoItems = regexResults.some(o => !o.items?.length);
+          if (hasIncompleteContact || hasNoItems) {
+            setIsWarningBatch(true);
+            toast.warning(`Berhasil mengenali ${regexResults.length} pesanan`, {
+              description: 'Beberapa informasi belum lengkap. Mohon periksa kembali.'
+            });
+          } else {
+            toast.success(`Berhasil mengenali ${regexResults.length} pesanan`);
+          }
           return;
         }
 
-        // Add a debug note or log if regex is confident but misses items
-        if (regexResults.length > 0 && regexConfidence >= threshold && hasMissingItems) {
-           console.log(`Regex confidence is high (${regexConfidence.toFixed(2)}), but heuristic suggests missing items (${totalExtractedItems}/${totalRawItems}). Falling back to AI.`);
+        // Only fall to AI if regex found items but count is incomplete (hasMissingItems),
+        // or found zero items at all.
+        if (regexResults.length > 0) {
+          console.log(`Regex incomplete (found: ${totalExtractedItems}/${totalRawItems} items). Attempting AI fallback.`);
         }
       }
 
@@ -141,14 +164,20 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
               });
               return;
             }
-          } catch (err) {
+          } catch (err: any) {
             toast.dismiss(aiToastId);
             console.error("AI Parse Error:", err);
+            
+            // If AI specifically failed, notify the user that we are falling back to regex or standard methods
+            const errorMessage = err.message || "Gagal memproses dengan AI.";
+            toast.error(errorMessage, {
+              description: "Menggunakan ekstraksi pola standar sebagai cadangan."
+            });
           }
         }
       } else if (regexResults.length === 0 || regexConfidence < threshold) {
         // Regex failed/weak and AI is explicitly disabled
-        toast.info("AI Parser dinonaktifkan. Menggunakan ekstraksi standar.");
+        toast.info("AI Parser dinonaktifkan. Menggunakan ekstraksi pola standar.");
       }
 
       // 3. Last Resort: Use Regex results if present (even if low confidence)
@@ -169,8 +198,10 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
           description: warningDesc
         });
       } else {
-        const errorMsg = 'Gagal mengenali format. Silakan tulis ulang atau gunakan format yang lebih jelas.';
-        toast.error(errorMsg);
+        toast.error("Sistem tidak dapat mengenali pesanan.", {
+          description: "Pastikan teks berisi Nama dan Daftar Barang yang jelas (contoh: 2x Barang @10.000).",
+          duration: 5000
+        });
       }
     } finally {
       setIsParsing(false);
@@ -640,9 +671,13 @@ Pesanan:
               {parsedOrders.map((order, idx) => {
                 const confidence = getParsingConfidence(order);
                 const isLocationMissing = !order.recipient?.kelurahan || !order.recipient?.kecamatan || !order.recipient?.kota || !order.recipient?.provinsi || !order.recipient?.kodepos;
-                const isIncomplete = !order.recipient?.name || !order.recipient?.phone || !order.recipient?.addressRaw || isLocationMissing || !order.items?.length;
+                const isMissingPhone = !order.recipient?.phone;
+                const isMissingAddress = !order.recipient?.addressRaw;
+                const isMissingItems = !order.items?.length;
+                const hasUnpricedItems = order.items?.some(item => item.unitPrice === 0) ?? false;
+                const isIncomplete = !order.recipient?.name || isMissingPhone || isMissingAddress || isLocationMissing || isMissingItems;
                 const isItemMismatch = (order.metadata?.potentialItemCount || 0) > (order.items?.length || 0);
-                const showWarning = confidence < 0.8 || isIncomplete || isItemMismatch;
+                const showWarning = confidence < 0.8 || isIncomplete || isItemMismatch || hasUnpricedItems;
 
                 return (
                   <div key={idx} className={cn(
@@ -668,20 +703,28 @@ Pesanan:
                           </Button>
                         </div>
                         <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
                             {showWarning ? (
-                              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive/40 animate-pulse">
+                              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive/40 animate-pulse shrink-0">
                                 <AlertTriangle className="h-3 w-3 text-destructive" />
                                 <span className="text-[10px] font-bold text-destructive uppercase tracking-tighter">Review Diperlukan</span>
                               </div>
                             ) : (
-                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
                             )}
-                            <span className="text-sm font-bold truncate max-w-[150px]">{order.recipient?.name || 'Tanpa Nama'}</span>
-                            <span className="text-xs text-muted-foreground">• {order.recipient?.phone || 'Tanpa HP'}</span>
+                            <span className="text-sm font-bold break-words truncate">{order.recipient?.name || 'Tanpa Nama'}</span>
+                            {/* Phone — inline beside name (original position) */}
+                            {isMissingPhone ? (
+                              <div className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 shrink-0">
+                                <AlertCircle className="h-2.5 w-2.5" />
+                                No HP?
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground shrink-0">• {order.recipient?.phone}</span>
+                            )}
                           </div>
                           
-                          <div className="flex items-center gap-2 mr-1">
+                          <div className="flex items-center gap-2 ml-1 shrink-0">
                             {order.metadata?.isAiParsed && (
                               <Badge variant="outline" className="text-[8px] px-1 h-3.5 bg-amber-50 text-amber-600 border-amber-200 uppercase font-black tracking-tighter">AI</Badge>
                             )}
@@ -691,9 +734,17 @@ Pesanan:
                           </div>
                         </div>
                         
-                        <p className="text-[11px] text-muted-foreground/80 leading-snug line-clamp-2 mb-2">
-                          {order.recipient?.addressRaw || 'Tanpa Alamat'}
-                        </p>
+                        {/* Address — inline warning at field position */}
+                        {isMissingAddress ? (
+                          <div className="flex items-center gap-1 text-[10px] font-bold mb-2 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40">
+                            <AlertCircle className="h-3 w-3 shrink-0" />
+                            <span>Alamat belum diisi</span>
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-muted-foreground/80 leading-snug mb-2 break-words">
+                            {order.recipient?.addressRaw}
+                          </div>
+                        )}
 
                         {!isLocationMissing ? (
                           <div className="flex items-center gap-1.5 text-[10px] text-primary/80 font-medium mb-3 bg-primary/[0.03] w-fit px-2 py-0.5 rounded border border-primary/10">
@@ -710,19 +761,36 @@ Pesanan:
                         )}
                         
                         {isItemMismatch && (
-                          <div className="flex items-center gap-1.5 text-[10px] text-amber-700 font-bold mb-3 bg-amber-50 dark:bg-amber-900/20 w-fit px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40">
+                          <div className="flex items-center gap-1.5 text-[10px] text-amber-700 font-bold mb-2 bg-amber-50 dark:bg-amber-900/20 w-fit px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40">
                             <Sparkles className="h-3 w-3 text-amber-600" />
-                            <span>Heuristic: Kemungkinan barang terlewat ({order.items?.length}/{order.metadata?.potentialItemCount} pesanan ditemukan)</span>
+                            <span>Kemungkinan barang terlewat ({order.items?.length}/{order.metadata?.potentialItemCount} ditemukan)</span>
                           </div>
                         )}
-                        
-                        <div className="flex flex-wrap gap-1">
-                          {order.items?.map((item, i) => (
-                            <Badge key={i} variant="outline" className="text-[10px] font-normal py-0">
-                              {item.qty}x {item.name}
-                            </Badge>
-                          ))}
-                        </div>
+
+                        {/* Items — inline no-items warning or chip list */}
+                        {isMissingItems ? (
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40">
+                            <AlertCircle className="h-3 w-3 shrink-0" />
+                            <span>Daftar barang kosong</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-1">
+                            {hasUnpricedItems && (
+                              <div className="flex items-center gap-1 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 mb-0.5 w-full">
+                                <AlertCircle className="h-2.5 w-2.5" />
+                                Ada barang tanpa harga — lengkapi di edit
+                              </div>
+                            )}
+                            {order.items?.map((item, i) => (
+                              <Badge key={i} variant="outline" className={cn(
+                                "text-[10px] font-normal py-0",
+                                item.unitPrice === 0 && "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+                              )}>
+                                {item.qty}x {item.name}{item.unitPrice > 0 ? ` @${formatNumber(item.unitPrice)}` : ' (harga?)'}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                   </div>
                 );
               })}
