@@ -63,6 +63,7 @@ interface OrderTableProps {
   onDelete: (order: JastipOrder) => void;
   onViewDetails: (order: JastipOrder) => void;
   onConfirm?: (order: JastipOrder) => void;
+  onReview?: (order: JastipOrder) => void;
 }
 
 // ─── Component ──────────────────────────────────────────────
@@ -77,6 +78,7 @@ export function OrderTable({
   onDelete,
   onViewDetails,
   onConfirm,
+  onReview,
 }: OrderTableProps) {
   // ── State ──
   const [searchTerm, setSearchTerm] = useState('');
@@ -131,8 +133,14 @@ export function OrderTable({
   const handleJumpPage = (e: React.FormEvent) => {
     e.preventDefault();
     const pageNum = parseInt(jumpPage);
-    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
-      setCurrentPage(pageNum);
+    if (!isNaN(pageNum)) {
+      if (pageNum < 1) {
+        setCurrentPage(1);
+      } else if (pageNum > totalPages) {
+        setCurrentPage(totalPages);
+      } else {
+        setCurrentPage(pageNum);
+      }
       setJumpPage('');
     }
   };
@@ -298,8 +306,8 @@ export function OrderTable({
                           variant="ghost" 
                           size="icon" 
                           className="h-8 w-8 text-amber-600 hover:bg-amber-100/60 transition-all border border-transparent hover:border-amber-200" 
-                          onClick={() => onEdit(order)}
-                          title="Review Pesanan"
+                          onClick={() => onReview?.(order)}
+                          title="Review"
                         >
                           <AlertTriangle className="h-4 w-4" />
                         </Button>

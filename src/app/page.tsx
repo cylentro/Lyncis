@@ -46,6 +46,7 @@ export default function BucketPage() {
   const [deletingOrder, setDeletingOrder] = useState<JastipOrder | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [sheetMode, setSheetMode] = useState<'edit' | 'review'>('edit');
 
   // ─── Queries ────────────────────────────────────────────────
   const orders = useOrders(
@@ -96,6 +97,14 @@ export default function BucketPage() {
   const handleEdit = useCallback((order: JastipOrder) => {
     setEditingOrder(order);
     setIsReadOnly(false);
+    setSheetMode('edit');
+    setEditDialogOpen(true);
+  }, []);
+
+  const handleReview = useCallback((order: JastipOrder) => {
+    setEditingOrder(order);
+    setIsReadOnly(false);
+    setSheetMode('review');
     setEditDialogOpen(true);
   }, []);
 
@@ -297,6 +306,7 @@ export default function BucketPage() {
                 onDelete={handleDelete}
                 onViewDetails={handleViewDetails}
                 onConfirm={handleConfirmOrder}
+                onReview={handleReview}
               />
             </div>
           </div>
@@ -312,6 +322,7 @@ export default function BucketPage() {
         onApprove={handleApproveOne}
         activeTags={allTags ?? []}
         readOnly={isReadOnly}
+        mode={sheetMode}
       />
 
       <UnifiedIntakePanel

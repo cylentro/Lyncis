@@ -30,6 +30,7 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 - **Advanced WhatsApp Parser**: Span-based deduplication, inline header stripping, and Indonesian thousand separator support (✅ Complete)
 - **Intelligent AI Fallback**: Multi-pass filtering accepting regex results if heuristic item counts match (✅ Complete)
 - **Contextual UI Warnings**: Field-level inline feedback for missing phone, address, or unpriced items (✅ Complete)
+- **UI/UX Standardization**: Consistent drawer titles, black "Simpan" buttons, and clamped pagination jumps (✅ Complete)
 - **PWA configuration**: Offline capability for field use
 
 ## 🛠️ Tech Stack
@@ -111,6 +112,7 @@ src/
 - **High-Contrast Notifications**: Themed Sonner toasts with color-coded borders, icons, and close buttons (✅ Complete)
 - **Adaptive UI Logic**: Inline field-level warnings for missing phone, address, or items (✅ Complete)
 - **Smart Parsing**: Intelligent AI fallback with greedy regex priority (✅ Complete)
+- **Workflow Clarity**: Explicit Edit vs Review modes with context-aware button labels (✅ Complete)
 
 **Next Up: Phase 3** 🚧
 - Multi-select state manager

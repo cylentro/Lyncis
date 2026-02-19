@@ -543,8 +543,8 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
            <Button variant="outline" className="flex-1 h-10 rounded-md text-xs font-bold border-border/80 hover:bg-muted/50" onClick={cancelEditing}>
              Batal
            </Button>
-           <Button className="flex-[2] h-10 rounded-md text-xs font-bold bg-primary hover:bg-primary/95 transition-all active:scale-98" onClick={saveEditing}>
-             Update Pesanan
+           <Button className="flex-[2] h-10 rounded-md text-xs font-bold bg-black hover:bg-black/90 text-white transition-all active:scale-98" onClick={saveEditing}>
+             Simpan
            </Button>
         </div>
       </div>

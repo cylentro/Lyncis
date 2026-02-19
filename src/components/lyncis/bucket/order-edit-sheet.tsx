@@ -30,6 +30,7 @@ interface OrderEditSheetProps {
   onApprove?: (id: string) => void;
   activeTags?: string[];
   readOnly?: boolean;
+  mode?: 'edit' | 'review';
 }
 
 function createEmptyItem(): JastipItem {
@@ -52,6 +53,7 @@ export function OrderEditSheet({
   onApprove,
   activeTags = [],
   readOnly = false,
+  mode = 'edit',
 }: OrderEditSheetProps) {
   const [formData, setFormData] = useState<JastipOrder | null>(null);
 
@@ -122,7 +124,7 @@ export function OrderEditSheet({
         side="right" 
         className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l shadow-2xl overflow-hidden"
         onPointerDownOutside={(e) => {
-          if (formData.metadata?.needsTriage || !readOnly) {
+          if (mode === 'review' || !readOnly) {
             e.preventDefault();
           }
         }}
@@ -139,7 +141,7 @@ export function OrderEditSheet({
              </div>
              <div>
                 <SheetTitle className="text-base font-bold tracking-tight">
-                  {formData.metadata?.needsTriage ? 'Review Pesanan' : (readOnly ? 'Detail Pesanan' : 'Edit Pesanan')}
+                  {readOnly ? 'Detail Pesanan' : 'Edit Pesanan'}
                 </SheetTitle>
                 <div className="flex items-center gap-2 mt-0.5">
                    <Badge 
@@ -185,7 +187,7 @@ export function OrderEditSheet({
           <div className="shrink-0 p-6 border-t bg-background shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-40">
              <div className="flex gap-3">
                 <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 h-11 font-bold rounded-lg border-border/80 hover:bg-muted/50 transition-all">Batal</Button>
-                {formData.metadata?.needsTriage ? (
+                {mode === 'review' ? (
                   <Button 
                     onClick={async () => {
                       if (formData) {
@@ -204,7 +206,7 @@ export function OrderEditSheet({
                     Verifikasi & Simpan
                   </Button>
                 ) : (
-                  <Button onClick={handleSave} className="flex-[2] h-11 font-bold shadow-lg shadow-primary/20 rounded-md bg-primary hover:bg-primary/95 transition-all active:scale-98">Simpan Perubahan</Button>
+                  <Button onClick={handleSave} className="flex-[2] h-11 font-bold bg-black hover:bg-black/90 text-white rounded-md transition-all active:scale-98">Simpan</Button>
                 )}
              </div>
           </div>

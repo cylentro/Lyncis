@@ -31,3 +31,10 @@
 - Added `handleApproveOne` and `handleApproveAll` handlers
 - Rendered `<ExcelTriagePanel>` above `<OrderTable>` when `triageOrders.length > 0`
 - **Verify**: `npx tsc --noEmit` — PASS (only pre-existing test file errors)
+
+---
+### Drawer Title Standardization
+- **Files changed**: `src/components/lyncis/bucket/order-edit-sheet.tsx`, `src/components/lyncis/bucket/order-table.tsx`
+- Removed forced "Review Pesanan" title in `OrderEditSheet`. Now consistently shows "Edit Pesanan" or "Detail Pesanan" even for orders needing triage.
+- Shortened triage button tooltip in `OrderTable` to "Review".
+- Reason: User requested titles represent purpose; warning icons and badges already identify orders needing review.
