@@ -73,5 +73,7 @@ export interface JastipOrder {
         needsTriage?: boolean;
         /** True when one or more items could not be fully parsed (e.g. missing price) */
         parseWarning?: boolean;
+        /** The original raw text block associated with this order */
+        originalRawText?: string;
     };
 }

@@ -1,0 +1,16 @@
+code_category,category_id,category_en
+DOC,Dokumen,Document
+KESEHATAN,Perawatan & kesehatan,Care & health
+LAINNYA,Lainnya,Others
+ELECTRONIC,Elektronik,Electronic
+FASHION,Model,Fashion
+FNB,Makanan kering dan minuman,Dry food and drinks
+HOUSEHOLD,Rumah tangga,Household
+MAINAN,Mainan & hobi,Toy & hobby
+OTOMOTIF,Otomotif,Automotive
+ATK,Perlengkapan tulis,Stationary
+MEBEL,Mebel,Furniture
+BARANG_BERHARGA,Paket Premium,Premium Package
+COLD_DRINK,Dingin - Minuman,Cold - Drink
+COLD_FOOD,Dingin - Makanan (bukan es krim),Cold - Food (Non Ice Cream)
+COLD_OTHERS,Dingin - Lainnya,Cold - Others

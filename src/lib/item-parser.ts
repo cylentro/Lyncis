@@ -366,9 +366,11 @@ export function extractItems(text: string): ExtractItemsResult {
         const name = match[1].trim();
 
         // Anti-leakage: if name starts with common address/contact keyword
-        if (/^(alamat|address|lokasi|almt|telp|phone|nama|name|hp|wa)\b/i.test(name)) continue;
+        if (/^(alamat|address|lokasi|almt|telp|phone|nama|name|hp|wa|jalan|jl|jln|kirim)\b/i.test(name)) continue;
         // Anti-leakage: if name is strictly numeric
         if (/^\d+$/.test(name)) continue;
+        // Anti-leakage: 5-digit price at end of address-like line is likely a zip code
+        if (match[2].length === 5 && /\b(jl|jalan|no|rt|rw|kel|kec|kab|kota)\b/i.test(name)) continue;
 
         if (!claimLine(match[0])) continue;
         const price = parsePrice(match[2]);
@@ -487,6 +489,14 @@ export function countPotentialItems(text: string): number {
 
         // Skip common order headers if they are ALONE on the line
         if (/^\s*(order|pesanan|barang|item|list|daftar)\s*:?\s*$/i.test(line)) return;
+
+        // If line has many commas/semicolons and multiple numbers, it's likely a hidden item list
+        const commaCount = line.split(/[,;\t]/).length - 1;
+        const numberCount = (line.match(/\d+/g) || []).length;
+        if (commaCount >= 2 && numberCount >= 2) {
+            count += (commaCount + 1);
+            return;
+        }
 
         if (line.split(/[,;\t]/).length >= 3) return;
 

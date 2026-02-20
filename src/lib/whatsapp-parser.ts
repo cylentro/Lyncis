@@ -255,6 +255,7 @@ export async function parseWhatsAppText(text: string): Promise<Partial<JastipOrd
             metadata: {
                 potentialItemCount: _countPotentialItems(block),
                 isAiParsed: false,
+                originalRawText: block,
             },
             status: 'unassigned',
             tag: '',

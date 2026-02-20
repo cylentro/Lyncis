@@ -254,6 +254,7 @@ export const id = {
         no_address: 'Tanpa Alamat',
         location_not_mapped: 'Lokasi belum terpetakan',
         no_items: 'Tanpa Barang',
+        original_text_reference: 'Referensi Teks Asli',
     },
     status: {
         unassigned: 'Bucket Baru',

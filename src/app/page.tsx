@@ -314,8 +314,8 @@ export default function BucketPage() {
             </Button>
 
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 overflow-hidden">
-                <img src="/icon.svg" alt="Lyncis" className="h-5 w-5" />
+              <div className="flex h-8 w-8 items-center justify-center">
+                <img src="/icon.svg" alt="Lyncis" className="h-6 w-6" />
               </div>
               <div>
                 <h1 className="text-sm font-bold tracking-tight">{dict.common.app_name}</h1>

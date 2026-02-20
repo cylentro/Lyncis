@@ -362,6 +362,22 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           
+          {/* Original Text Reference Section */}
+          {editOrder?.metadata?.originalRawText && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <h4 className="text-[13px] font-bold flex items-center gap-2">
+                  <span className="p-1 rounded bg-blue-100 text-blue-600"><MessageSquare className="h-3.5 w-3.5" /></span>
+                  {dict.intake.original_text_reference}
+                </h4>
+              </div>
+              <div className="p-3 rounded-md bg-muted/30 border border-border/40 font-mono text-[11px] whitespace-pre-wrap leading-relaxed text-muted-foreground select-all">
+                {editOrder.metadata.originalRawText}
+              </div>
+              <Separator className="opacity-40" />
+            </div>
+          )}
+
           {/* Recipient Section */}
           <div className="space-y-4">
              <div className="flex items-center justify-between px-1">

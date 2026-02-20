@@ -24,6 +24,8 @@ function cleanJsonString(text: string): string {
 }
 // ─── Shared extraction rules (kept minimal to save tokens) ────────────────
 const EXTRACTION_RULES = `STRUCTURE PARSING:
+- "kirim ke" marks the start of an address or recipient info.
+- "pesen" marks the start of the item list.
 - Text before "List:"/"Pesanan:"/"Order:" or item lines = recipient info (name, phone, address)
 - A 5-digit number in address context (e.g. "Jaksel 12940") is a ZIPCODE, not a price
 - Item lines start with qty+name or name+qty pattern, often after "List:" marker
@@ -208,6 +210,7 @@ export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]
                 metadata: {
                     potentialItemCount: countPotentialItems(text),
                     isAiParsed: true,
+                    originalRawText: text,
                 },
                 status: 'unassigned',
                 createdAt: Date.now(),

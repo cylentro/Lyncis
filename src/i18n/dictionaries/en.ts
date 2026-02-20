@@ -256,6 +256,7 @@ export const en: Dictionary = {
         no_address: 'No Address',
         location_not_mapped: 'Location not mapped',
         no_items: 'No Items',
+        original_text_reference: 'Original Text Reference',
     },
     status: {
         unassigned: 'New Bucket',

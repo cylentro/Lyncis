@@ -57,6 +57,10 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
 }: OrderFormContentProps<T>) {
   const { dict } = useLanguage();
 
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('id-ID').format(num);
+  };
+
   // ─── Handlers ───
 
   const updateRecipient = (field: string, value: string) => {
@@ -89,7 +93,6 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
           qty: 1,
           unitPrice: 0,
           totalPrice: 0,
-          rawWeightKg: 0,
           isManualTotal: false,
         },
       ],
@@ -124,7 +127,7 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
   useEffect(() => {
     const { l, w, h } = formData.logistics.dimensions;
     const volumetricWeight = (l * w * h) / 6000;
-    const itemWeight = formData.items.reduce((sum, item) => sum + (item.rawWeightKg * item.qty), 0);
+    const itemWeight = 0; // Removed individual item weight tracking
     const finalPackedWeight = formData.logistics.finalPackedWeight || itemWeight;
     const chargeableWeight = Math.max(finalPackedWeight, volumetricWeight);
 
@@ -324,74 +327,55 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
               )}
  
                <div className="space-y-4">
-                 <div>
-                   <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">{dict.orders.item_name}</Label>
-                   {readOnly ? (
-                      <div className="text-sm font-black px-1 mt-1">{item.name}</div>
-                  ) : (
-                      <Input
-                        value={item.name}
-                        onChange={(e) => updateItem(index, { ...item, name: e.target.value })}
-                        placeholder={dict.common.edit === 'Edit' ? 'Example: Starbucks Tumbler' : 'Contoh: Starbucks Tumbler'}
-                        className="h-10 bg-background border-muted-foreground/20 rounded-xl font-medium mt-1"
-                      />
-                  )}
-                </div>
+                 <div className="grid grid-cols-[1fr_80px_120px_120px_40px] gap-2 items-center px-1 mb-2">
+              <Label className="text-[10px] uppercase font-black text-muted-foreground ml-1">{dict.orders.item_name}</Label>
+              <Label className="text-[10px] uppercase font-black text-muted-foreground text-center">Qty</Label>
+              <Label className="text-[10px] uppercase font-black text-muted-foreground text-center">{dict.intake.unit_price}</Label>
+              <Label className="text-[10px] uppercase font-black text-muted-foreground text-center">{dict.intake.total_price}</Label>
+              <div />
+            </div>
+                     <div className="grid grid-cols-[1fr_80px_120px_120px_40px] gap-2 items-center">
+                      <div className="relative">
+                        <Input
+                          placeholder={dict.orders.item_name}
+                          value={item.name}
+                          onChange={(e) => updateItem(index, { ...item, name: e.target.value })}
+                          className="h-9 font-medium pr-8"
+                          readOnly={readOnly}
+                        />
+                      </div>
 
-                 <div className="grid grid-cols-4 gap-3">
-                   <div className="space-y-1">
-                     <Label className="text-[9px] uppercase font-black text-muted-foreground text-center block">Qty</Label>
-                    {readOnly ? (
-                        <div className="text-xs font-black text-center mt-1">x{item.qty}</div>
-                    ) : (
-                        <Input
-                          type="number"
-                          className="h-9 bg-background border-muted-foreground/20 rounded-xl text-center font-bold"
-                          value={item.qty}
-                          onChange={(e) => updateItem(index, updateQuantity(item, parseInt(e.target.value) || 1))}
-                        />
-                    )}
-                  </div>
-                   <div className="space-y-1">
-                     <Label className="text-[9px] uppercase font-black text-muted-foreground text-center block">{dict.common.edit === 'Edit' ? 'Price' : 'Harga'}</Label>
-                    {readOnly ? (
-                        <div className="text-xs font-bold text-center mt-1">{item.unitPrice.toLocaleString('id-ID')}</div>
-                    ) : (
-                        <Input
-                          type="number"
-                          className="h-9 bg-background border-muted-foreground/20 rounded-xl text-center font-bold"
-                          value={item.unitPrice}
-                          onChange={(e) => updateItem(index, updateUnitPrice(item, parseFloat(e.target.value) || 0))}
-                        />
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[9px] uppercase font-black text-muted-foreground text-center block">Total</Label>
-                    {readOnly ? (
-                        <div className="text-xs font-black text-center mt-1 text-primary">{item.totalPrice.toLocaleString('id-ID')}</div>
-                    ) : (
-                        <Input
-                          type="number"
-                          className="h-9 bg-muted/30 border-muted-foreground/20 rounded-xl text-center font-bold text-primary"
-                          value={item.totalPrice}
-                          onChange={(e) => updateItem(index, updateTotalPrice(item, parseFloat(e.target.value) || 0))}
-                        />
-                    )}
-                  </div>
-                   <div className="space-y-1">
-                     <Label className="text-[9px] uppercase font-black text-muted-foreground text-center block">{dict.wizard.weight} (kg)</Label>
-                    {readOnly ? (
-                        <div className="text-xs font-bold text-center mt-1">{item.rawWeightKg}kg</div>
-                    ) : (
-                        <Input
-                          type="number"
-                          step={0.1}
-                          className="h-9 bg-background border-muted-foreground/20 rounded-xl text-center font-bold"
-                          value={item.rawWeightKg}
-                          onChange={(e) => updateItem(index, { ...item, rawWeightKg: parseFloat(e.target.value) || 0 })}
-                        />
-                    )}
-                  </div>
+                      <Input
+                        type="number"
+                        value={item.qty}
+                        onChange={(e) => updateItem(index, updateQuantity(item, parseInt(e.target.value) || 0))}
+                        className="h-9 text-center font-bold"
+                        readOnly={readOnly}
+                      />
+
+                      <Input
+                        type="text"
+                        value={item.unitPrice ? formatNumber(item.unitPrice) : ''}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\./g, '');
+                          updateItem(index, updateUnitPrice(item, parseInt(val) || 0));
+                        }}
+                        className="h-9 text-center font-mono"
+                        placeholder="0"
+                        readOnly={readOnly}
+                      />
+
+                      <Input
+                        type="text"
+                        value={item.totalPrice ? formatNumber(item.totalPrice) : ''}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\./g, '');
+                          updateItem(index, updateTotalPrice(item, parseInt(val) || 0));
+                        }}
+                        className="h-9 text-center font-mono bg-muted/30"
+                        placeholder="0"
+                        readOnly={readOnly}
+                      />
                 </div>
               </div>
             </div>
