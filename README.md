@@ -33,7 +33,9 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 - **Intelligent AI Fallback**: Multi-pass filtering accepting regex results if heuristic item counts match (✅ Complete)
 - **Contextual UI Warnings**: Field-level inline feedback for missing phone, address, or unpriced items (✅ Complete)
 - **UI/UX Standardization**: Consistent drawer titles, black "Simpan" buttons, and clamped pagination jumps (✅ Complete)
-- **PWA configuration**: Offline capability for field use
+- **i18n Localization**: Dual-language (EN / ID) support with `LanguageProvider` and dynamic dictionary switching (✅ Complete)
+- **Visual Polish**: Loading skeletons, `Loader2` spinners, error boundary, and standardized `formatWeight` / `formatCurrency` utilities (✅ Complete)
+- **PWA configuration**: Offline capability and installability for field use
 
 ## 🛠️ Tech Stack
 
@@ -122,10 +124,13 @@ src/
 - **Batch Safety & Bulk Control**: Integrated AlertDialog for destructive batch actions and added multi-select "Keluarkan Terpilih" in Wizard Step 1 (✅ Complete)
 - **Enhanced Data Visibility**: Implementation of piece-count (Pcs) summaries and SKU counts in main dashboard (✅ Complete)
 - **Backend Sync Stability**: Unified `updatedAt` timestamps across all DB mutations and fixed navigation-level batch commit bugs (✅ Complete)
+- **Visual Polish**: Error boundary (`error.tsx`), `Skeleton` loaders for index page, `Loader2` spinners on parsing buttons, and unified Indonesian-locale formatters (✅ Complete)
+- **i18n**: Dual-language (EN/ID) `LanguageProvider` with full dictionary coverage across all dialogs and wizards (✅ Complete)
 
-**Next Up: Phase 4 Polish** 🚧
-- PWA Configuration
-- Final production layout tweaks
+**Next Up: Phase 4 PWA** 🚧
+- PWA configuration via `@serwist/next`
+- Branded favicon & `manifest.json`
+- Service worker for offline static caching
 
 ## 🔧 Development
 
@@ -147,4 +152,4 @@ This project is part of the Lyncis POC initiative.
 ---
 
 **Last Updated**: February 20, 2026  
-**Build Status**: ✅ Passing production build (Next.js 16)
+**Build Status**: ✅ Passing production build (Next.js 16 / Turbopack)
