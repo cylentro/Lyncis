@@ -22,6 +22,8 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 - Multi-select order processing with sticky action bar
 - Logistics calculations (volumetric weight, chargeable weight, zone-based pricing)
 - Batch wizard with origin selection and validation gate
+- **Bulk Batch Management**: Added multi-select removal and "Clear Batch" capability with safety confirmation dialogs
+- **Dynamic Order Table**: Enhanced "Barang" column with SKU and total piece (Pcs) counts
 - Seamless tag transition (Active -> Archived / Riwayat)
 
 ### Phase 4: Polish & PWA (🚧 In Progress)
@@ -117,6 +119,9 @@ src/
 - **Intake UI Polish**: Auto-reset WhatsApp extraction, hidden metadata on hover, and standardized item delete buttons across all modes (✅ Complete)
 - **Advanced Price Reconciliation**: 3-case back-calculation logic for missing unit or total prices in AI extraction (✅ Complete)
 - **Structural Parsing & AI Guardrails**: Enhanced address/item separation with zipcode awareness and strict location lookup logic (✅ Complete)
+- **Batch Safety & Bulk Control**: Integrated AlertDialog for destructive batch actions and added multi-select "Keluarkan Terpilih" in Wizard Step 1 (✅ Complete)
+- **Enhanced Data Visibility**: Implementation of piece-count (Pcs) summaries and SKU counts in main dashboard (✅ Complete)
+- **Backend Sync Stability**: Unified `updatedAt` timestamps across all DB mutations and fixed navigation-level batch commit bugs (✅ Complete)
 
 **Next Up: Phase 4 Polish** 🚧
 - PWA Configuration

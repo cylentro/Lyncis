@@ -6,6 +6,7 @@ import { JastipOrder } from '@/lib/types';
 import { validateOrderForBatch } from '@/lib/order-validator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, CheckCircle2, AlertCircle, Pencil, Trash2, ShoppingBag, MapPin, AlertTriangle, Phone, FileText, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,8 @@ interface CompletionGateProps {
     orders: JastipOrder[];
     onProceed: () => void;
     onRemoveOrder: (id: string) => void;
+    onRemoveAllOrders: () => void;
+    onRemoveSelected: (ids: string[]) => void;
     onEditOrder: (id: string) => void;
 }
 
@@ -22,9 +25,12 @@ export function CompletionGate({
     orders,
     onProceed,
     onRemoveOrder,
+    onRemoveAllOrders,
+    onRemoveSelected,
     onEditOrder,
 }: CompletionGateProps) {
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const toggleExpand = (id: string) => {
         setExpandedIds(prev => {
@@ -33,6 +39,23 @@ export function CompletionGate({
             else next.add(id);
             return next;
         });
+    };
+
+    const toggleSelect = (id: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const handleSelectAll = (checked: boolean | "indeterminate") => {
+        if (checked === true) {
+            setSelectedIds(new Set(orders.map(o => o.id)));
+        } else {
+            setSelectedIds(new Set());
+        }
     };
 
     // Validate all orders in real-time
@@ -51,10 +74,44 @@ export function CompletionGate({
             {/* Header Status */}
             <div className="p-6 border-b">
                 <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-xl font-semibold text-foreground">Validasi Kelengkapan</h2>
-                    <Badge variant={allComplete ? 'default' : 'secondary'} className="text-sm">
-                        {completeCount} / {orders.length} Lengkap
-                    </Badge>
+                    <h2 className="text-xl font-semibold text-foreground flex items-center gap-3">
+                        <Checkbox 
+                            checked={selectedIds.size === orders.length && orders.length > 0} 
+                            onCheckedChange={handleSelectAll} 
+                            className="h-5 w-5 rounded-md data-[state=checked]:bg-primary"
+                        />
+                        Validasi Kelengkapan
+                        <Badge variant={allComplete ? 'default' : 'secondary'} className="text-sm">
+                            {completeCount} / {orders.length} Lengkap
+                        </Badge>
+                    </h2>
+                    {selectedIds.size > 0 ? (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-muted-foreground mr-2">{selectedIds.size} Terpilih</span>
+                            <Button 
+                                variant="destructive" 
+                                size="sm" 
+                                onClick={() => {
+                                    onRemoveSelected(Array.from(selectedIds));
+                                    setSelectedIds(new Set());
+                                }} 
+                                className="h-8 gap-1.5 px-3 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all font-bold"
+                            >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Hapus Terpilih
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={onRemoveAllOrders} 
+                            className="h-8 gap-1.5 px-3 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all font-bold"
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Kosongkan Batch
+                        </Button>
+                    )}
                 </div>
                 <p className="text-sm text-muted-foreground">
                     Periksa data penerima dan barang sebelum lanjut ke logistik.
@@ -114,9 +171,17 @@ export function CompletionGate({
                                         </div>
 
                                         <div 
-                                            className="p-4 flex gap-4 cursor-pointer"
+                                            className={cn("p-4 flex gap-4 cursor-pointer transition-colors", selectedIds.has(order.id) ? "bg-primary/5" : "")}
                                             onClick={() => toggleExpand(order.id)}
                                         >
+                                            {/* Item Selector */}
+                                            <div className="pt-0.5 flex items-start" onClick={(e) => e.stopPropagation()}>
+                                                <Checkbox 
+                                                    checked={selectedIds.has(order.id)} 
+                                                    onCheckedChange={() => toggleSelect(order.id)} 
+                                                    className="h-5 w-5 rounded-md data-[state=checked]:bg-primary" 
+                                                />
+                                            </div>
 
                                             {/* Content */}
                                             <div className="flex-1 min-w-0">
@@ -164,32 +229,35 @@ export function CompletionGate({
                                                         </div>
                                                     )}
 
-                                                    {/* Address Raw Triage */}
-                                                    {!order.recipient.addressRaw ? (
-                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40 w-fit">
-                                                            <FileText className="h-3 w-3 shrink-0" />
-                                                            Alamat lengkap belum diisi
-                                                        </div>
-                                                    ) : (
-                                                        <div className="text-[11px] text-muted-foreground leading-snug line-clamp-1 group-hover:line-clamp-none transition-all">
-                                                            {order.recipient.addressRaw}
-                                                        </div>
-                                                    )}
+                                                    {/* Address & Area Combined */}
+                                                    <div className="flex flex-col gap-1.5">
+                                                        {/* Address Raw */}
+                                                        {!order.recipient.addressRaw ? (
+                                                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40 w-fit">
+                                                                <FileText className="h-3 w-3 shrink-0" />
+                                                                Alamat lengkap belum diisi
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+                                                                {order.recipient.addressRaw}
+                                                            </div>
+                                                        )}
 
-                                                    {/* Area / Shipping Data Triage (Combined) */}
-                                                    {(!order.recipient.kelurahan || !order.recipient.kodepos) ? (
-                                                        <div className="flex items-center gap-1.5 text-[10px] text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-900/20 w-fit px-2 py-1 rounded border border-red-200 dark:border-red-900/40">
-                                                            <MapPin className="h-3 w-3 shrink-0" />
-                                                            Lokasi & Kode Pos Belum Terpetakan
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center gap-1.5 text-[10px] text-primary/80 font-medium bg-primary/[0.03] w-fit px-2 py-0.5 rounded border border-primary/10">
-                                                            <MapPin className="h-3 w-3 shrink-0" />
-                                                            <span className="truncate">
-                                                                {order.recipient.kelurahan}, {order.recipient.kecamatan}, {order.recipient.kota}, {order.recipient.provinsi} {order.recipient.kodepos}
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                        {/* Area / Shipping Data */}
+                                                        {(!order.recipient.kelurahan || !order.recipient.kodepos) ? (
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-900/20 w-fit px-2 py-1 rounded border border-red-200 dark:border-red-900/40">
+                                                                <MapPin className="h-3 w-3 shrink-0" />
+                                                                Lokasi & Kode Pos Belum Terpetakan
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-primary/80 font-medium bg-primary/[0.03] w-fit px-2 py-0.5 rounded border border-primary/10">
+                                                                <MapPin className="h-3 w-3 shrink-0" />
+                                                                <span className="truncate">
+                                                                    {order.recipient.kelurahan}, {order.recipient.kecamatan}, {order.recipient.kota}, {order.recipient.provinsi} {order.recipient.kodepos}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
 
                                                     {/* Items Triage */}
                                                     {(!order.items || order.items.length === 0) ? (

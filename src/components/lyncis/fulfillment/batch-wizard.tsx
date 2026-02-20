@@ -8,6 +8,16 @@ import {
     SheetHeader, 
     SheetTitle 
 } from '@/components/ui/sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
     useStagedOrders, 
     useSenderAddresses, 
@@ -50,6 +60,7 @@ export function BatchWizard({
     // UI State
     const [currentStep, setCurrentStep] = useState<WizardStep>('validate');
     const [selectedSenderId, setSelectedSenderId] = useState<string | null>(null);
+    const [removingOrder, setRemovingOrder] = useState<string | 'all' | string[] | null>(null);
 
     // Logistics Data State (Temporary per session)
     // Initialize with order data if available
@@ -107,14 +118,32 @@ export function BatchWizard({
         }
     };
 
-    const handleRemoveOrder = async (id: string) => {
-        if (confirm("Hapus pesanan ini dari batch?")) {
-            await unstageOrders([id]);
-            toast.success("Pesanan dihapus dari batch");
+    const confirmRemove = async () => {
+        if (!removingOrder) return;
+        
+        if (removingOrder === 'all') {
+            const ids = orders?.map(o => o.id) || [];
+            if (ids.length > 0) {
+                await unstageOrders(ids);
+                toast.success("Semua pesanan dikeluarkan dari batch");
+            }
+            onOpenChange(false);
+        } else if (Array.isArray(removingOrder)) {
+            if (removingOrder.length > 0) {
+                await unstageOrders(removingOrder);
+                toast.success(`${removingOrder.length} pesanan dikeluarkan dari batch`);
+                if (orders && orders.length === removingOrder.length) {
+                    onOpenChange(false);
+                }
+            }
+        } else {
+            await unstageOrders([removingOrder]);
+            toast.success("Pesanan dikeluarkan dari batch");
             if (orders?.length === 1) { // Was the last one
                 onOpenChange(false);
             }
         }
+        setRemovingOrder(null);
     };
 
     const handleUpdateLogistics = (id: string, updates: Partial<OrderLogisticsForm>) => {
@@ -204,7 +233,9 @@ export function BatchWizard({
                         <CompletionGate 
                             orders={orders}
                             onProceed={() => setCurrentStep('origin')}
-                            onRemoveOrder={handleRemoveOrder}
+                            onRemoveOrder={(id) => setRemovingOrder(id)}
+                            onRemoveAllOrders={() => setRemovingOrder('all')}
+                            onRemoveSelected={(ids) => setRemovingOrder(ids)}
                             onEditOrder={onEditOrder}
                         />
                     )}
@@ -242,6 +273,42 @@ export function BatchWizard({
                     )}
                 </div>
             </SheetContent>
+
+            <AlertDialog open={!!removingOrder} onOpenChange={(open) => {
+                if (!open) setRemovingOrder(null);
+            }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {removingOrder === 'all' 
+                                ? 'Kosongkan Batch?' 
+                                : Array.isArray(removingOrder) 
+                                    ? `Hapus ${removingOrder.length} Pesanan?` 
+                                    : 'Hapus Pesanan?'}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {removingOrder === 'all' 
+                                ? 'Seluruh pesanan dalam batch ini akan dikeluarkan dari antrean batch dan dikembalikan ke status "Bucket Baru". Tindakan ini tidak bisa dibatalkan.' 
+                                : Array.isArray(removingOrder)
+                                    ? `${removingOrder.length} pesanan yang terpilih akan dikeluarkan dari batch dan dikembalikan ke status "Bucket Baru".`
+                                    : 'Pesanan ini akan dikeluarkan dari batch dan dikembalikan ke status "Bucket Baru".'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmRemove}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {removingOrder === 'all' 
+                                ? 'Kosongkan Batch' 
+                                : Array.isArray(removingOrder) 
+                                    ? 'Keluarkan Terpilih' 
+                                    : 'Keluarkan dari Batch'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Sheet>
     );
 }

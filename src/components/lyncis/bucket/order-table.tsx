@@ -254,7 +254,7 @@ export function OrderTable({
               </TableHead>
               <TableHead className="min-w-[180px] text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4">Penerima & Batch</TableHead>
               <TableHead className="hidden lg:table-cell min-w-[300px] text-[10px] font-black uppercase tracking-widest text-muted-foreground">Alamat</TableHead>
-              <TableHead className="w-[80px] text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">Items</TableHead>
+              <TableHead className="w-[80px] text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">Barang</TableHead>
               <TableHead className="w-[150px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-8">Total</TableHead>
               <TableHead className="w-[120px] text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status</TableHead>
               <TableHead className="w-[140px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-6">Aksi</TableHead>
@@ -303,9 +303,14 @@ export function OrderTable({
                       {order.recipient.addressRaw || '—'}
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <div className="inline-flex items-center justify-center p-1 px-2.5 bg-muted/40 rounded-lg border border-border/40">
-                      <span className="font-mono text-[11px] font-black">{order.items.length}</span>
+                  <TableCell className="text-center align-middle">
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      <div className="inline-flex items-center justify-center py-0.5 px-2 bg-muted/40 rounded-md border border-border/40">
+                        <span className="font-mono text-[11px] font-black leading-none translate-y-[0.5px]">{order.items.length}</span>
+                      </div>
+                      <span className="text-[9px] font-black text-muted-foreground opacity-70 leading-none tracking-widest uppercase">
+                        {order.items.reduce((sum, item) => sum + (item.qty || 1), 0)} Pcs
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm font-black pr-8 text-foreground/80">
