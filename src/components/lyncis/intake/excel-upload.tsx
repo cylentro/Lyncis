@@ -2,7 +2,7 @@ import { useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, X, FileCheck, AlertCircle, Play, SlidersHorizontal } from 'lucide-react';
+import { Upload, X, FileCheck, AlertCircle, Play, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { parseExcelFile, ExcelParseResult } from '@/lib/excel-parser';
 import { generateHeaderHash, loadSavedMapping } from '@/lib/header-mapper';
 import { convertRowsToOrders } from '@/lib/excel-to-orders';
@@ -199,9 +199,9 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
             />
           </div>
 
-          <Button className="w-full h-11 font-bold shadow-lg shadow-primary/20" onClick={startImportWithCurrentMapping}>
-            <Play className="h-4 w-4 mr-2" />
-            Gas Impor Sekarang
+          <Button className="w-full h-11 font-bold shadow-lg shadow-primary/20" onClick={startImportWithCurrentMapping} disabled={isParsing}>
+            {isParsing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
+            {isParsing ? 'Mengimpor...' : 'Gas Impor Sekarang'}
           </Button>
         </div>
       </div>
@@ -225,7 +225,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
       
       {isParsing ? (
         <div className="flex flex-col items-center gap-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <Loader2 className="h-8 w-8 text-primary animate-spin" />
           <p className="text-sm font-medium animate-pulse">Memproses file...</p>
         </div>
       ) : error ? (

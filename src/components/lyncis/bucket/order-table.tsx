@@ -15,6 +15,8 @@ import {
   AlertTriangle,
   ShieldCheck,
 } from 'lucide-react';
+import { useLanguage } from '@/components/providers/language-provider';
+import { formatCurrency } from '@/lib/formatters';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import {
@@ -38,15 +40,6 @@ const STATUS_CONFIG: Record<
 
 // ─── Helpers ────────────────────────────────────────────────
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
 function getOrderTotal(order: JastipOrder): number {
   return order.items.reduce((sum, item) => sum + item.totalPrice, 0);
 }
@@ -55,6 +48,7 @@ function getOrderTotal(order: JastipOrder): number {
 
 interface OrderTableProps {
   orders: JastipOrder[];
+  isLoading?: boolean;
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
   onSelectAll: (ids: string[]) => void;
@@ -70,6 +64,7 @@ interface OrderTableProps {
 
 export function OrderTable({
   orders,
+  isLoading = false,
   selectedIds,
   onToggleSelect,
   onSelectAll,
@@ -80,6 +75,7 @@ export function OrderTable({
   onConfirm,
   onReview,
 }: OrderTableProps) {
+  const { dict } = useLanguage();
   // ── State ──
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus | 'needs-review'>('all');
@@ -162,13 +158,40 @@ export function OrderTable({
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="relative flex flex-col h-[calc(100vh-120px)] min-h-[500px] w-full bg-background border border-border/80 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300">
+        <div className="sticky top-0 z-30 flex items-center gap-4 p-4 border-b bg-background/95">
+          <Skeleton className="h-10 w-full max-w-sm rounded-xl" />
+          <Skeleton className="h-8 w-48 rounded-lg ml-auto" />
+        </div>
+        <div className="flex-1 p-4">
+          <div className="space-y-4">
+            {Array.from({ length: 15 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-4 w-4 rounded" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-3 w-[200px]" />
+                </div>
+                <Skeleton className="h-4 w-[100px] hidden md:block" />
+                <Skeleton className="h-6 w-[80px]" />
+                <Skeleton className="h-8 w-8 rounded-full ml-auto" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-24 text-center bg-muted/5 rounded-lg border-2 border-dashed">
         <Package className="h-16 w-16 text-muted-foreground/20" />
         <div>
-          <p className="text-base font-bold text-muted-foreground/80">Belum ada pesanan</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">Siapkan file Excel atau paste teks WhatsApp untuk memulai.</p>
+          <p className="text-base font-bold text-muted-foreground/80">{dict.orders.no_orders}</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">{dict.orders.no_orders_desc}</p>
         </div>
       </div>
     );
@@ -181,7 +204,7 @@ export function OrderTable({
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder="Cari nama, HP, alamat, atau batch..." 
+            placeholder={dict.orders.search_placeholder} 
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -214,7 +237,7 @@ export function OrderTable({
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {s === 'all' ? 'Semua' : STATUS_CONFIG[s].label}
+              {s === 'all' ? dict.common.all : dict.status[s]}
             </button>
           ))}
           {/* Needs Review tab — only shown when there are pending orders */}
@@ -232,7 +255,7 @@ export function OrderTable({
               )}
             >
               <AlertTriangle className="h-3 w-3" />
-              Perlu Review
+              {dict.orders.needs_review}
               <span className={cn(
                 "inline-flex items-center justify-center h-4 w-auto min-w-4 px-1 rounded-full text-[9px] font-black leading-none translate-y-[0.5px]",
                 statusFilter === 'needs-review' ? "bg-white/30 text-white" : "bg-amber-100 text-amber-700"
@@ -252,12 +275,12 @@ export function OrderTable({
               <TableHead className="w-[48px] px-4">
                 <Checkbox checked={allSelected} onCheckedChange={handleSelectAllToggle} />
               </TableHead>
-              <TableHead className="min-w-[180px] text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4">Penerima & Batch</TableHead>
-              <TableHead className="hidden lg:table-cell min-w-[300px] text-[10px] font-black uppercase tracking-widest text-muted-foreground">Alamat</TableHead>
-              <TableHead className="w-[80px] text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">Barang</TableHead>
-              <TableHead className="w-[150px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-8">Total</TableHead>
-              <TableHead className="w-[120px] text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status</TableHead>
-              <TableHead className="w-[140px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-6">Aksi</TableHead>
+              <TableHead className="min-w-[180px] text-[10px] font-black uppercase tracking-widest text-muted-foreground py-4">{dict.orders.recipient_batch}</TableHead>
+              <TableHead className="hidden lg:table-cell min-w-[300px] text-[10px] font-black uppercase tracking-widest text-muted-foreground">{dict.orders.address}</TableHead>
+              <TableHead className="w-[80px] text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">{dict.orders.items}</TableHead>
+              <TableHead className="w-[150px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-8">{dict.orders.total}</TableHead>
+              <TableHead className="w-[120px] text-[10px] font-black uppercase tracking-widest text-muted-foreground">{dict.orders.status}</TableHead>
+              <TableHead className="w-[140px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-6">{dict.common.actions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -278,7 +301,7 @@ export function OrderTable({
                   </TableCell>
                   <TableCell className="py-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-black tracking-tight group-hover:text-primary transition-colors">{order.recipient.name || '—'}</span>
+                      <span className="text-sm font-black tracking-tight group-hover:text-primary transition-colors">{order.recipient.name || dict.orders.empty_name}</span>
                       <span className="text-xs text-muted-foreground font-mono font-bold opacity-80 leading-none">{order.recipient.phone || '—'}</span>
                       {order.metadata?.sourceFileName && (
                         <div className="flex items-center gap-1 mt-1 px-1.5 py-0 bg-primary/[0.04] text-primary/70 rounded-full w-fit border border-primary/10">
@@ -292,7 +315,7 @@ export function OrderTable({
                         <div className="flex items-center gap-1 mt-0.5 px-1.5 py-0 bg-amber-100 text-amber-700 rounded-full w-fit border border-amber-200">
                           <AlertTriangle className="h-2.5 w-2.5 shrink-0" />
                           <span className="text-[8px] font-black uppercase tracking-tight">
-                            {order.metadata?.parseWarning ? 'Cek Barang' : 'Perlu Review'}
+                            {order.metadata?.parseWarning ? dict.orders.check_items : dict.orders.needs_review}
                           </span>
                         </div>
                       )}
@@ -329,7 +352,7 @@ export function OrderTable({
                           size="icon" 
                           className="h-8 w-8 text-amber-600 hover:bg-amber-100/60 transition-all border border-transparent hover:border-amber-200" 
                           onClick={() => onReview?.(order)}
-                          title="Review"
+                          title={dict.common.edit}
                         >
                           <AlertTriangle className="h-4 w-4" />
                         </Button>
@@ -340,7 +363,7 @@ export function OrderTable({
                             size="icon" 
                             className="h-8 w-8 text-green-600 hover:bg-green-100/50 transition-all border border-transparent hover:border-green-200" 
                             onClick={() => onConfirm(order)}
-                            title="Pindah ke Batch"
+                            title={dict.orders.move_to_batch}
                           >
                             <CheckCircle2 className="h-4 w-4" />
                           </Button>
@@ -352,7 +375,7 @@ export function OrderTable({
                         size="icon" 
                         className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all text-muted-foreground" 
                         onClick={() => onViewDetails(order)}
-                        title="Lihat Detail"
+                        title={dict.orders.view_detail}
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
@@ -362,7 +385,7 @@ export function OrderTable({
                         size="icon" 
                         className="h-8 w-8 hover:bg-muted text-muted-foreground transition-all" 
                         onClick={() => onEdit(order)}
-                        title="Edit"
+                        title={dict.common.edit}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -372,7 +395,7 @@ export function OrderTable({
                         size="icon" 
                         className="h-8 w-8 text-destructive hover:bg-destructive/10 transition-all border border-transparent hover:border-destructive/20" 
                         onClick={() => onDelete(order)}
-                        title="Hapus"
+                        title={dict.common.delete}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -389,11 +412,11 @@ export function OrderTable({
       <div className="sticky bottom-0 z-30 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t bg-background/95 backdrop-blur-md shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
         <div className="flex items-center gap-4">
             <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 px-3 py-1.5 bg-muted/30 rounded-lg">
-                <span className="text-foreground">{filteredOrders.length}</span> Pesanan
+                <span className="text-foreground">{filteredOrders.length}</span> {dict.orders.count.split(' ')[1]}
             </div>
             
             <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">Tampilkan:</span>
+                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">{dict.orders.show_per_page}</span>
                 <Select
                     value={pageSize.toString()}
                     onValueChange={(v) => {
@@ -417,7 +440,7 @@ export function OrderTable({
 
         <div className="flex items-center gap-4">
           <form onSubmit={handleJumpPage} className="flex items-center gap-2">
-            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider whitespace-nowrap">Ke Halaman:</span>
+            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider whitespace-nowrap">{dict.orders.go_to_page}</span>
             <Input 
                 value={jumpPage}
                 onChange={(e) => setJumpPage(e.target.value)}
@@ -448,7 +471,7 @@ export function OrderTable({
             
             <div className="flex items-center gap-2 mx-2">
                 <span className="text-xs font-black px-3 py-1 bg-primary text-primary-foreground rounded-lg shadow-lg shadow-primary/20">{currentPage}</span>
-                <span className="text-[10px] font-black text-muted-foreground">DARI</span>
+                <span className="text-[10px] font-black text-muted-foreground">{dict.orders.from}</span>
                 <span className="text-xs font-black text-muted-foreground">{totalPages}</span>
             </div>
 
@@ -480,10 +503,11 @@ export function OrderTable({
 // ─── Status Badge ───────────────────────────────────────────
 
 function StatusBadge({ order }: { order: JastipOrder }) {
+  const { dict } = useLanguage();
   if (order.metadata?.needsTriage) {
     return (
       <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold uppercase tracking-widest py-0.5 px-2.5">
-        Perlu Review
+        {dict.orders.needs_review}
       </Badge>
     );
   }
@@ -493,7 +517,7 @@ function StatusBadge({ order }: { order: JastipOrder }) {
   if (status === 'processed') {
     return (
       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800 text-[10px] font-bold uppercase tracking-widest py-0.5 px-2.5">
-        Selesai
+        {dict.status.processed}
       </Badge>
     );
   }
@@ -501,14 +525,14 @@ function StatusBadge({ order }: { order: JastipOrder }) {
   if (status === 'staged') {
     return (
       <Badge variant="default" className="bg-blue-600 text-white border-transparent hover:bg-blue-700 text-[10px] font-bold uppercase tracking-widest py-0.5 px-2.5 shadow-sm">
-        Siap Kirim
+        {dict.status.staged}
       </Badge>
     );
   }
 
   return (
     <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-widest py-0.5 px-2.5 bg-muted/50 border-border/50">
-      Bucket Baru
+      {dict.status.unassigned}
     </Badge>
   );
 }
@@ -525,5 +549,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';

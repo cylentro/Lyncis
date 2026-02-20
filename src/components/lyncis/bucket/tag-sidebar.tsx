@@ -6,6 +6,7 @@ import { ChevronDown, Tag, X, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { SheetClose } from '@/components/ui/sheet';
+import { useLanguage } from '@/components/providers/language-provider';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -34,6 +35,7 @@ export function TagSidebar({
   onTagSelect,
   showMobileClose = false,
 }: TagSidebarProps) {
+  const { dict } = useLanguage();
   const [archiveOpen, setArchiveOpen] = useState(false);
 
   // A tag is archived (Riwayat) if all its orders have been shipped (processed)
@@ -46,7 +48,7 @@ export function TagSidebar({
     <div className="flex flex-col h-full py-4">
       <div className="px-4 pt-4 pb-4 flex items-center justify-between">
         <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.1em] opacity-70">
-          Filter Tag
+          {dict.sidebar.filter_tag}
         </h3>
         {showMobileClose && (
           <SheetClose className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/70 hover:bg-destructive hover:text-white transition-all duration-200 border border-transparent active:scale-95 p-0">
@@ -70,7 +72,7 @@ export function TagSidebar({
             <span className={cn(
               "font-semibold transition-colors duration-300",
               selectedTag === null ? "text-primary" : "text-foreground group-hover:text-primary/80"
-            )}>Semua Pesanan</span>
+            )}>{dict.sidebar.all_orders}</span>
             <Badge
               variant={selectedTag === null ? 'default' : 'outline'}
               className={cn(
@@ -133,7 +135,7 @@ export function TagSidebar({
                     archiveOpen && 'rotate-180'
                   )}
                 />
-                Riwayat ({archivedTags.length})
+                {dict.sidebar.history} ({archivedTags.length})
               </button>
 
               {archiveOpen && (

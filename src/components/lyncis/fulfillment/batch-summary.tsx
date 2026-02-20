@@ -21,6 +21,7 @@ import { Package, MapPin, Truck, Scale, ShoppingBag } from 'lucide-react';
 import { SERVICE_LABELS } from '@/lib/shipping-zones';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
+import { formatCurrency, formatWeight } from '@/lib/formatters';
 
 interface BatchSummaryProps {
     orders: JastipOrder[];
@@ -102,12 +103,12 @@ export function BatchSummary({
                     </div>
                     <div className="bg-background border rounded-lg p-2">
                         <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">Berat</div>
-                        <div className="font-bold text-sm leading-tight">{totalWeight.toFixed(1)}kg</div>
+                        <div className="font-bold text-sm leading-tight">{formatWeight(totalWeight)}</div>
                     </div>
                     <div className="bg-background border rounded-lg p-2 border-green-600 dark:border-green-400">
                         <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">Ongkir</div>
                         <div className="font-bold text-sm leading-tight text-green-600 dark:text-green-400">
-                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalCost)}
+                            {formatCurrency(totalCost)}
                         </div>
                     </div>
                 </div>
@@ -133,7 +134,7 @@ export function BatchSummary({
                                                 {order.recipient.name}
                                             </h3>
                                             <div className="font-black text-foreground text-sm shrink-0">
-                                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(form.estimatedCost)}
+                                                {formatCurrency(form.estimatedCost)}
                                             </div>
                                         </div>
 
@@ -159,11 +160,11 @@ export function BatchSummary({
                                                 <div className="flex items-center gap-2 text-[9px] font-bold text-muted-foreground">
                                                     <span className="flex items-center gap-1">
                                                         <Scale className="h-3 w-3 shrink-0" />
-                                                        {form.weight}kg
+                                                        {formatWeight(form.weight)}
                                                     </span>
                                                     {form.volumetric > form.weight && (
                                                         <span className="text-amber-600 bg-amber-50 px-1 rounded border border-amber-100 shrink-0">
-                                                            Vol: {form.volumetric}kg
+                                                            Vol: {formatWeight(form.volumetric)}
                                                         </span>
                                                     )}
                                                 </div>
@@ -192,8 +193,8 @@ export function BatchSummary({
                                                     </div>
                                                     <div className="space-y-1 text-right">
                                                         <span className="text-muted-foreground font-bold uppercase tracking-tight text-[10px]">LOGISTIK</span>
-                                                        <p className="font-bold text-xs">Berat: {form.weight} kg</p>
-                                                        <p className="text-[10px] text-primary font-black uppercase">Chargeable: {form.chargeable} kg</p>
+                                                        <p className="font-bold text-xs">Berat: {formatWeight(form.weight)}</p>
+                                                        <p className="text-[10px] text-primary font-black uppercase">Chargeable: {formatWeight(form.chargeable)}</p>
                                                     </div>
                                                 </div>
 
@@ -256,7 +257,7 @@ export function BatchSummary({
                         <DialogHeader>
                             <DialogTitle>Konfirmasi Pengiriman</DialogTitle>
                             <DialogDescription>
-                                Anda akan memproses <strong>{orders.length} pesanan</strong> dengan total ongkir <strong>{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(totalCost)}</strong>.
+                                Anda akan memproses <strong>{orders.length} pesanan</strong> dengan total ongkir <strong>{formatCurrency(totalCost)}</strong>.
                                 <br/><br/>
                                 Status pesanan akan berubah menjadi <span className="text-green-600 font-medium">Processed</span> dan masuk ke riwayat pengiriman.
                             </DialogDescription>

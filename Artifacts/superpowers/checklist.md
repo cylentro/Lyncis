@@ -278,11 +278,12 @@
 - [x] Auto-inference from unique Kecamatan
 - [x] Integrated in both create and edit dialogs
 
-#### Step 4.3: Bahasa Indonesia Labels Audit
-- [x] `LABELS` object has all entries from both spec doc dictionaries
-- [x] All component files import from `LABELS`
-- [x] No hardcoded English strings in user-facing UI
-- [x] Status badges use correct Bahasa labels (Bucket Baru, Siap Kirim, Selesai)
+#### Step 4.3: Localized Dictionary (i18n)
+- [x] Implement LanguageProvider for dynamic switching
+- [x] English and Bahasa Indonesia dictionaries (`src/i18n/dictionaries`)
+- [x] User-facing labels map dynamically (Bucket Baru, Siap Kirim, Selesai)
+- [x] Toggle UI implemented in navigation
+- [x] Dynamic String Replacements (e.g. `{count} pesanan`)
 
 #### Step 4.4: PWA Configuration
 - [ ] `@serwist/next` installed and configured
@@ -299,13 +300,13 @@
 - [x] Layout Fix: Address text wrapping (no ellipsis/overlap) in table and preview (✅)
 - [x] Auto-Reset UI: WhatsApp extraction expands back to input automatically when all items deleted (✅)
 - [x] Hover UX: AI Badge & Phone number hide on hover to prevent icon overlap (✅)
-- [ ] Loading skeletons for data fetch
-- [ ] Loading spinner for Excel/LLM parsing
+- [x] Loading skeletons for data fetch
+- [x] Loading spinner for Excel/LLM parsing
 - [x] Currency formatted as "Rp X.XXX" (Indonesian format)
 - [x] Dates formatted in Indonesian locale
-- [ ] Weight formatted as "X,XX kg"
-- [ ] FAB animation smooth
-- [ ] Error boundary wraps main content
+- [x] Weight formatted as "X,XX kg"
+- [x] FAB animation smooth
+- [x] Error boundary wraps main content
 
 #### Step 4.6: Advanced AI & Parsing Refinements
 - [x] Configurable AI Engine: Support for Gemini and Gemma via `.env` (✅)
@@ -321,3 +322,8 @@
 - [x] Sidebar Fix: Responsive toggle behavior across all screen sizes (✅)
 - [x] Tag Autocomplete: Alphabetical sorting and "General" tag permanence (✅)
 - [x] Active Tag Suggester: Only shows tags with unassigned orders in intake forms (✅)
+
+#### Step 4.8: Batch Safety & UI Enhancements
+- [x] Secure Contextual State: Clear handling of empty orders in top navigation `commitBatch` (✅)
+- [x] Batch Guardrails: AlertDialogs implemented for "Keluarkan Terpilih" & "Kosongkan Batch" (✅)
+- [x] Table Analytics: SKU count and Total Pcs tracked in dashboard "Barang" column (✅)

@@ -41,8 +41,11 @@ import {
 import { Package, Plus, SlidersHorizontal, ChevronDown, Menu, Check, Trash, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/components/providers/language-provider';
+import { LanguageSelector } from '@/components/lyncis/shared/language-selector';
 
 export default function BucketPage() {
+  const { dict } = useLanguage();
   // ─── State ──────────────────────────────────────────────────
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -153,8 +156,8 @@ export default function BucketPage() {
 
   const handleEditSave = useCallback(async (order: JastipOrder) => {
     await updateOrder(order.id, order);
-    toast.success('Pesanan berhasil diupdate');
-  }, []);
+    toast.success(dict.orders.success_update);
+  }, [dict.orders.success_update]);
 
   const handleDelete = useCallback((order: JastipOrder) => {
     setDeletingOrder(order);
@@ -162,12 +165,12 @@ export default function BucketPage() {
 
   const handleConfirmOrder = useCallback(async (order: JastipOrder) => {
     if (order.metadata?.needsTriage) {
-      toast.error('Pesanan ini perlu direview manual terlebih dahulu');
+      toast.error(dict.orders.error_triage);
       return;
     }
     await updateOrder(order.id, { status: 'staged' });
-    toast.success('Pesanan dikonfirmasi ke Siap Kirim');
-  }, []);
+    toast.success(dict.orders.success_confirm);
+  }, [dict.orders.error_triage, dict.orders.success_confirm]);
 
   const handleBulkConfirm = useCallback(async () => {
     const selectedOrders = (orders ?? []).filter(o => selectedIds.has(o.id));
@@ -200,10 +203,10 @@ export default function BucketPage() {
         next.delete(deletingOrder.id);
         return next;
       });
-      toast.success('Pesanan berhasil dihapus');
+      toast.success(dict.orders.success_delete);
       setDeletingOrder(null);
     }
-  }, [deletingOrder]);
+  }, [deletingOrder, dict.orders.success_delete]);
 
   const handleCreateSave = useCallback(
     async (order: Omit<JastipOrder, 'id'>) => {
@@ -315,9 +318,9 @@ export default function BucketPage() {
                 <Package className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h1 className="text-sm font-bold tracking-tight">Lyncis</h1>
+                <h1 className="text-sm font-bold tracking-tight">{dict.common.app_name}</h1>
                 <p className="hidden text-[10px] font-medium text-muted-foreground sm:block leading-none">
-                  Data Cleaning House
+                  {dict.common.app_description}
                 </p>
               </div>
             </div>
@@ -327,8 +330,8 @@ export default function BucketPage() {
              <div className="hidden items-center gap-2 md:flex">
               <span className="h-1 w-1 rounded-full bg-primary/30" />
               <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                {orders?.length ?? 0} pesanan
-                {selectedTag === '___staged___' ? ' • Batch Pengiriman' : (selectedTag ? ` • ${selectedTag}` : '')}
+                {dict.orders.count.replace('{count}', (orders?.length ?? 0).toString())}
+                {selectedTag === '___staged___' ? ` • ${dict.orders.batch_shipping}` : (selectedTag ? ` • ${selectedTag}` : '')}
               </span>
             </div>
 
@@ -341,16 +344,18 @@ export default function BucketPage() {
                 className="h-8 gap-1.5 border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 active:scale-95 transition-all"
               >
                 <Package className="h-3.5 w-3.5" />
-                Batch
+                {dict.navigation.batch}
                 <Badge variant="default" className="h-4 min-w-[1rem] px-1 bg-blue-600 text-white text-[9px] ml-0.5">
                   {stagedOrders.length}
                 </Badge>
               </Button>
             )}
 
+            <LanguageSelector />
+
             <Button size="sm" onClick={() => setIntakePanelOpen(true)} className="h-8 gap-1.5 active:scale-95 transition-transform duration-200 rounded-md">
               <Plus className="h-3.5 w-3.5" />
-              Tambah <span className="hidden sm:inline">Pesanan</span>
+              {dict.navigation.add_order.split(' ')[0]} <span className="hidden sm:inline">{dict.navigation.add_order.split(' ').slice(1).join(' ')}</span>
             </Button>
           </div>
         </div>
@@ -386,6 +391,7 @@ export default function BucketPage() {
             )}>
               <OrderTable
                 orders={orders ?? []}
+                isLoading={orders === undefined}
                 selectedIds={selectedIds}
                 onToggleSelect={handleToggleSelect}
                 onSelectAll={handleSelectAll}
@@ -430,19 +436,19 @@ export default function BucketPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Pesanan?</AlertDialogTitle>
+            <AlertDialogTitle>{dict.orders.delete_confirm_title}</AlertDialogTitle>
             <AlertDialogDescription>
-              Pesanan untuk &ldquo;{deletingOrder?.recipient.name || 'Tanpa Nama'}
-              &rdquo; akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.
+              {dict.orders.delete_confirm_desc
+                .replace('{name}', deletingOrder?.recipient.name || 'Tanpa Nama')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel>{dict.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Hapus
+              {dict.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

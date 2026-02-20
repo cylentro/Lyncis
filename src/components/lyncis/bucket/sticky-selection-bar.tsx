@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { X, Trash2, Package, ArrowRight, MinusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useLanguage } from '@/components/providers/language-provider';
 
 interface StickySelectionBarProps {
   totalSelected: number;
@@ -26,6 +26,7 @@ export function StickySelectionBar({
   onDelete,
   onDeselect,
 }: StickySelectionBarProps) {
+  const { dict } = useLanguage();
   const visible = totalSelected > 0;
 
   return (
@@ -53,8 +54,12 @@ export function StickySelectionBar({
               <X className="h-4 w-4" />
             </Button>
             <div className="flex flex-col">
-              <span className="text-sm font-bold leading-none">{totalSelected} dipilih</span>
-              <span className="text-[10px] text-white/50 uppercase font-bold tracking-wider mt-0.5">Bulk Actions</span>
+              <span className="text-sm font-bold leading-none">
+                {dict.orders.selected_count.replace('{count}', totalSelected.toString())}
+              </span>
+              <span className="text-[10px] text-white/50 uppercase font-bold tracking-wider mt-0.5">
+                {dict.orders.bulk_actions}
+              </span>
             </div>
           </div>
 
@@ -67,7 +72,7 @@ export function StickySelectionBar({
                 className="h-9 px-4 gap-2 bg-green-600 hover:bg-green-700 text-white border-0 font-bold text-xs rounded-full shadow-lg shadow-green-500/20 active:scale-95 transition-all"
               >
                 <Package className="h-3.5 w-3.5" />
-                Pindah ke Batch
+                {dict.orders.move_to_batch}
               </Button>
             )}
 
@@ -80,7 +85,7 @@ export function StickySelectionBar({
                 className="h-9 px-4 gap-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full active:scale-95 transition-all"
               >
                 <MinusCircle className="h-3.5 w-3.5" />
-                Hapus dari Batch
+                {dict.orders.remove_from_batch}
               </Button>
             )}
 

@@ -580,6 +580,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
                   onClick={handleSmartParse}
                   disabled={isParsing || !text.trim()}
                 >
+                  {isParsing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : null}
                   Proses Teks (⌘ + ↵)
                 </Button>
               )}

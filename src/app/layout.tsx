@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { cookies } from "next/headers";
+import { LanguageProvider } from "@/components/providers/language-provider";
+import { Locale } from "@/i18n/get-dictionary";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,19 +23,24 @@ export const metadata: Metadata = {
     "Staging & orchestration layer untuk Jastiper. Transform data WhatsApp & Excel menjadi batch pengiriman.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get("lyncis-locale")?.value as Locale) || "id";
+
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        <TooltipProvider>
-          {children}
-        </TooltipProvider>
+        <LanguageProvider initialLocale={locale}>
+          <TooltipProvider>
+            {children}
+          </TooltipProvider>
+        </LanguageProvider>
         <Toaster closeButton position="top-right" theme="light" />
       </body>
     </html>

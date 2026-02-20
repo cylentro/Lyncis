@@ -20,6 +20,7 @@ import {
     SERVICE_LABELS 
 } from '@/lib/shipping-zones';
 import { cn } from '@/lib/utils';
+import { formatCurrency, formatWeight } from '@/lib/formatters';
 import { Package, Scale, ChevronDown, ChevronUp, User, ShoppingBag, Info, MapPin } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -252,12 +253,12 @@ export function LogisticsInput({
                     </div>
                     <div className="bg-background border rounded-lg p-2 text-center">
                         <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">Berat</div>
-                        <div className="font-bold text-sm leading-tight">{totalWeight.toFixed(1)}kg</div>
+                        <div className="font-bold text-sm leading-tight">{formatWeight(totalWeight)}</div>
                     </div>
                     <div className="bg-background border rounded-lg p-2 text-center border-green-600 dark:border-green-400">
                         <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">Ongkir</div>
                         <div className="font-bold text-sm leading-tight text-green-600 dark:text-green-400">
-                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalCost)}
+                            {formatCurrency(totalCost)}
                         </div>
                     </div>
                 </div>
@@ -434,7 +435,7 @@ export function LogisticsInput({
                                         <div className="flex gap-4">
                                             <div className="flex flex-col">
                                                 <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter leading-none mb-0.5">Volumetric</span>
-                                                <span className="font-bold text-[11px]">{form.volumetric} kg</span>
+                                                <span className="font-bold text-[11px]">{formatWeight(form.volumetric)}</span>
                                             </div>
                                             <div className="flex flex-col">
                                                 <div className="flex items-center gap-1 mb-0.5">
@@ -462,14 +463,14 @@ export function LogisticsInput({
                                                     </Popover>
                                                 </div>
                                                 <span className={cn("font-bold text-[11px]", form.chargeable > form.weight ? "text-amber-600" : "text-primary")}>
-                                                    {form.chargeable} kg
+                                                    {formatWeight(form.chargeable)}
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="text-right">
                                             <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter leading-none block mb-0.5">Est. Ongkir</span>
                                             <span className="font-black text-xs text-foreground">
-                                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(form.estimatedCost)}
+                                                {formatCurrency(form.estimatedCost)}
                                             </span>
                                         </div>
                                     </div>
