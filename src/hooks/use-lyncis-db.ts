@@ -3,7 +3,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/lib/db';
-import { JastipOrder, OrderStatus } from '@/lib/types';
+import { JastipOrder, OrderStatus, SenderAddress } from '@/lib/types';
 
 // ─── Reactive Queries ───────────────────────────────────────
 
@@ -56,16 +56,20 @@ export function useAllTags() {
 export function useTagCounts() {
     return useLiveQuery(async () => {
         const orders = await db.orders.toArray();
-        const counts: Record<string, { total: number; unassigned: number }> = {};
+        const counts: Record<string, { total: number; unassigned: number; processed: number; staged: number }> = {};
 
         for (const order of orders) {
             if (!order.tag) continue;
             if (!counts[order.tag]) {
-                counts[order.tag] = { total: 0, unassigned: 0 };
+                counts[order.tag] = { total: 0, unassigned: 0, processed: 0, staged: 0 };
             }
             counts[order.tag].total++;
             if (order.status === 'unassigned') {
                 counts[order.tag].unassigned++;
+            } else if (order.status === 'processed') {
+                counts[order.tag].processed++;
+            } else if (order.status === 'staged') {
+                counts[order.tag].staged++;
             }
         }
 
@@ -103,7 +107,7 @@ export async function updateOrder(
     id: string,
     changes: Partial<JastipOrder>
 ): Promise<void> {
-    await db.orders.update(id, changes);
+    await db.orders.update(id, { ...changes, updatedAt: Date.now() });
 }
 
 /**
@@ -115,7 +119,7 @@ export async function bulkUpdateOrders(
 ): Promise<void> {
     await db.transaction('rw', db.orders, async () => {
         for (const id of ids) {
-            await db.orders.update(id, changes);
+            await db.orders.update(id, { ...changes, updatedAt: Date.now() });
         }
     });
 }
@@ -149,7 +153,163 @@ export async function markOrdersTriaged(ids: string[]): Promise<void> {
                     needsTriage: false,
                     isVerified: true,
                 },
+                updatedAt: Date.now(),
             });
         }
     });
+}
+
+// ─── Sender Address Hooks & Mutations ───────────────────────
+
+/**
+ * Reactive hook to fetch all sender addresses sorted by label.
+ */
+export function useSenderAddresses() {
+    return useLiveQuery(() => db.senderAddresses.orderBy('label').toArray(), []);
+}
+
+/**
+ * Add a new sender address.
+ */
+export async function addSenderAddress(
+    address: Omit<SenderAddress, 'id'>
+): Promise<string> {
+    const id = uuidv4();
+    await db.senderAddresses.add({ ...address, id } as SenderAddress);
+    return id;
+}
+
+/**
+ * Update a sender address.
+ */
+export async function updateSenderAddress(
+    id: string,
+    changes: Partial<SenderAddress>
+): Promise<void> {
+    await db.senderAddresses.update(id, changes);
+}
+
+/**
+ * Delete a sender address.
+ */
+export async function deleteSenderAddress(id: string): Promise<void> {
+    await db.senderAddresses.delete(id);
+}
+
+/**
+ * Set a sender address as default, clearing others.
+ */
+export async function setDefaultSenderAddress(id: string): Promise<void> {
+    await db.transaction('rw', db.senderAddresses, async () => {
+        const addresses = await db.senderAddresses.toArray();
+        for (const addr of addresses) {
+            // Set isDefault=true for the target, false for everything else
+            await db.senderAddresses.update(addr.id, { isDefault: addr.id === id });
+        }
+    });
+}
+
+/**
+ * Auto-save single order logistics during input process.
+ */
+export async function autoSaveLogistics(id: string, logistics: Partial<JastipOrder['logistics']>): Promise<void> {
+    const order = await db.orders.get(id);
+    if (!order) return;
+    await db.orders.update(id, {
+        logistics: { ...order.logistics, ...logistics },
+        updatedAt: Date.now(),
+    });
+}
+
+/**
+ * Auto-save sender ID to all staged orders in the current batch.
+ */
+export async function autoSaveSenderId(ids: string[], senderId: string): Promise<void> {
+    await db.transaction('rw', db.orders, async () => {
+        for (const id of ids) {
+            const order = await db.orders.get(id);
+            if (!order) continue;
+            await db.orders.update(id, {
+                logistics: { ...order.logistics, originId: senderId },
+                updatedAt: Date.now(),
+            });
+        }
+    });
+}
+
+// ─── Batch Mutations ────────────────────────────────────────
+
+/**
+ * Reactive hook returning all orders with status === 'staged'.
+ */
+export function useStagedOrders() {
+    return useLiveQuery(() => db.orders.where('status').equals('staged').toArray(), []);
+}
+
+/**
+ * Stages orders for a batch processing session.
+ */
+export async function stageOrders(ids: string[], batchId: string): Promise<void> {
+    await db.transaction('rw', db.orders, async () => {
+        for (const id of ids) {
+            await db.orders.update(id, { status: 'staged', batchId, updatedAt: Date.now() });
+        }
+    });
+}
+
+/**
+ * Reverts staged orders to 'unassigned', clearing batchId and logistics data.
+ */
+export async function unstageOrders(ids: string[]): Promise<void> {
+    await db.transaction('rw', db.orders, async () => {
+        for (const id of ids) {
+            const order = await db.orders.get(id);
+            if (!order) continue;
+
+            await db.orders.update(id, {
+                status: 'unassigned',
+                batchId: undefined, // remove batchId
+                logistics: {
+                    originId: null,
+                    finalPackedWeight: 0,
+                    dimensions: { l: 0, w: 0, h: 0 },
+                    volumetricWeight: 0,
+                    chargeableWeight: 0,
+                },
+                updatedAt: Date.now(),
+            });
+        }
+    });
+}
+
+/**
+ * Commit a batch: sets status to 'processed' and saves final logistics data.
+ */
+export async function commitBatch(
+    ids: string[],
+    logisticsMap: Record<string, Partial<JastipOrder['logistics']>>
+): Promise<void> {
+    await db.transaction('rw', db.orders, async () => {
+        for (const id of ids) {
+            const logisticsUpdates = logisticsMap[id] || {};
+            const order = await db.orders.get(id);
+            if (!order) continue;
+
+            await db.orders.update(id, {
+                status: 'processed',
+                logistics: { ...order.logistics, ...logisticsUpdates },
+                updatedAt: Date.now(),
+            });
+        }
+    });
+}
+
+/**
+ * Cancel a batch: finds all orders with this batchId and unstages them.
+ */
+export async function cancelBatch(batchId: string): Promise<void> {
+    // Indexes: ++id, tag, status, createdAt, batchId
+    const orders = await db.orders.where('batchId').equals(batchId).toArray();
+    const ids = orders.map((o) => o.id);
+    await unstageOrders(ids);
 }

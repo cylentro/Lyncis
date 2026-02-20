@@ -128,6 +128,11 @@ export function OrderEditSheet({
             e.preventDefault();
           }
         }}
+        onEscapeKeyDown={(e) => {
+          if (mode === 'review' || !readOnly) {
+            e.preventDefault();
+          }
+        }}
         showCloseButton={false}
       >
         {/* Header */}

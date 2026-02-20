@@ -385,7 +385,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
                    className="h-9 text-sm rounded-md" 
                    value={editOrder?.recipient?.phone || ''} 
                    onChange={(e) => updateEditRecipient('phone', e.target.value)}
-                   placeholder="08..."
+                   placeholder="081234567890"
                  />
                </div>
              </div>
@@ -695,7 +695,7 @@ Pesanan:
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5"
+                            className="h-7 w-7 text-muted-foreground hover:text-primary"
                             onClick={() => startEditing(idx)}
                           >
                             <Pencil className="h-3.5 w-3.5" />
@@ -703,14 +703,14 @@ Pesanan:
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/5"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
                             onClick={() => removeOrder(idx)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                         <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <div className="flex items-center gap-2 min-w-0 flex-1 pr-6 group-hover:pr-16 transition-all duration-200">
                             {showWarning ? (
                               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive/40 animate-pulse shrink-0">
                                 <AlertTriangle className="h-3 w-3 text-destructive" />
@@ -727,7 +727,7 @@ Pesanan:
                                 No HP?
                               </div>
                             ) : (
-                              <span className="text-xs text-muted-foreground shrink-0 group-hover:opacity-0 transition-all duration-200">• {order.recipient?.phone}</span>
+                              <span className="text-xs text-muted-foreground shrink-0 transition-all duration-200">• {order.recipient?.phone}</span>
                             )}
                           </div>
                           

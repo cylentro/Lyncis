@@ -220,7 +220,6 @@
 - [x] WhatsApp Parser: Regex-based engine for ID formats
 - [x] AI Fallback: Gemini Flash integration for messy text
 - [x] Intake UI: Tabbed Intake Zone in Bucket Page (Implemented as `UnifiedIntakeDialog`)
-- [ ] Phase 3: Shipping & Logistics Hub
 - [x] Intake Zone renders on main page
 - [x] Excel upload flow works end-to-end
 - [x] WhatsApp paste flow works end-to-end
@@ -229,59 +228,35 @@
 
 ### PHASE 3 — Fulfillment & Batching Logic
 
-#### Step 3.1: Build the Multi-Select State Manager
-- [x] `toggle` adds/removes from set (✅ Implemented in Page component)
-- [x] `selectAll` sets all provided IDs
-- [x] `deselectAll` clears
-- [ ] `count` returns `Set.size`
-- [x] Header checkbox selects/deselects all visible rows
+#### Step 3.1: Expand Data Models & Schema
+- [x] `ServiceType` definition ('regular', 'nextday', 'sameday', 'instant')
+- [x] `SenderAddress` interface with full address fields + default flag
+- [x] `JastipOrder.logistics` updated with `serviceType` and `estimatedCost`
+- [x] Dexie schema updated (v2) with `senderAddresses` table
+- [x] `SenderAddress` CRUD hooks (`useSenderAddresses`, `add`, `update`, `delete`, `setDefault`)
+- [x] Batch mutations (`stageOrders`, `unstageOrders`, `commitBatch`, `cancelBatch`)
 
-#### Step 3.2: Build the Floating Action Bar (FAB)
-- [ ] Appears when ≥1 order selected
-- [ ] Displaced when 0 selected
-- [ ] Shows selected count with Bahasa label
-- [ ] Total items count correct
-- [ ] Total weight correct
-- [ ] Total price correct (formatted as Rupiah)
-- [ ] "Proses Batch" button opens drawer
-- [ ] "Hapus" button with confirmation dialog
-- [ ] Smooth CSS transition in/out
+#### Step 3.2: Build Logistics Engine
+- [x] `calculateVolumetricWeight` (L*W*H/6000)
+- [x] `calculateChargeableWeight` (max of actual/volumetric)
+- [x] Zone Groups (~7 zones mapping 34 provinces)
+- [x] `getZoneForProvince` utility (fuzzy matching)
+- [x] `calculateShippingCost` using zone rates & service type
+- [x] Unit tests for all logistics & pricing logic pass
 
-#### Step 3.3: Build the Logistics Calculation Utility
-- [ ] Volumetric formula: `(L*W*H)/6000`
-- [ ] Chargeable formula: `Math.max(finalWeight, volumetricWeight)`
-- [ ] Edge case: zero dimensions
-- [ ] All tests pass
+#### Step 3.3: Build Batch Wizard Components
+- [x] **Step 1: Completion Gate** — Checks for missing fields, blocking invalid orders (Validator built)
+- [x] **Step 2: Logistics Input** — Per-order weight, dims, services type, live pricing
+- [x] **Step 3: Origin Selector** — Dropdown of saved sender addresses + inline add
+- [x] **Step 4: Summary** — Read-only view with totals & quick-edit links
+- [x] **Batch Wizard Container** — Manages stepped flow, stage persistence, and atomic commit
 
-#### Step 3.4: Build the Origins Static Data
-- [ ] At least 5 origin hubs defined
-- [ ] `getOriginById` lookup works
-- [ ] `getOriginName` returns fallback for unknown ID
-- [ ] All data matches `Origin` interface
-
-#### Step 3.5: Build the Batch Drawer
-- [ ] Sheet slides from right
-- [ ] Origin select populated from static list
-- [ ] Each order card shows recipient name + tag
-- [ ] `finalPackedWeight` input per order
-- [ ] L, W, H inputs per order
-- [ ] Volumetric weight auto-calculates live
-- [ ] Chargeable weight auto-calculates live, displayed bold
-- [ ] Batch summary totals correct
-- [ ] "Konfirmasi & Proses" bulk-updates orders:
-- [ ] `status` → `'processed'`
-- [ ] All `logistics` fields saved
-- [ ] Success toast shown
-- [ ] Selection cleared after processing
-- [ ] Drawer closes
-- [ ] Table reflects updated status immediately
-
-#### Step 3.6: Wire Fulfillment Into Main Page
-- [ ] FAB appears on selection
-- [ ] "Proses Batch" opens drawer
-- [ ] After processing: orders show "Selesai / Terkirim" badge
-- [ ] After processing: tag moves to "Riwayat" if all orders processed
-- [ ] Full flow works without errors
+#### Step 3.4: Wire Fulfillment into Main Page
+- [x] **FAB** — Shows "Proses Batch" / "Tambah ke Batch" / "Buka Batch"
+- [x] **Staged Status** — Table badges update to "Siap Kirim" (yellow)
+- [x] **Sidebar** — Shows count of staged orders
+- [x] **Atomic Commit** — "Buat Pengiriman" transitions ALL staged → processed (green)
+- [x] **Tag Lifecycle** — Move to "Riwayat" when all orders processed
 
 ### PHASE 4 — Polish & PWA
 
@@ -322,6 +297,8 @@
 - [x] Tablet responsive (768px)
 - [x] Desktop full layout (1024px+)
 - [x] Layout Fix: Address text wrapping (no ellipsis/overlap) in table and preview (✅)
+- [x] Auto-Reset UI: WhatsApp extraction expands back to input automatically when all items deleted (✅)
+- [x] Hover UX: AI Badge & Phone number hide on hover to prevent icon overlap (✅)
 - [ ] Loading skeletons for data fetch
 - [ ] Loading spinner for Excel/LLM parsing
 - [x] Currency formatted as "Rp X.XXX" (Indonesian format)
@@ -329,3 +306,18 @@
 - [ ] Weight formatted as "X,XX kg"
 - [ ] FAB animation smooth
 - [ ] Error boundary wraps main content
+
+#### Step 4.6: Advanced AI & Parsing Refinements
+- [x] Configurable AI Engine: Support for Gemini and Gemma via `.env` (✅)
+- [x] Model-Specific Optimizations: `responseSchema` for Gemini, Template-based for Gemma (✅)
+- [x] Advanced Price Reconciliation: 3-case back-calculation logic for missing unit/total prices (✅)
+- [x] Structural Parsing: ZIPCODE awareness prevents confusion with item prices (✅)
+- [x] AI Guardrails: Strict location lookup (80k records) with 0.4 confidence threshold (✅)
+- [x] Optimized Token utilization (Lean prompts + schema-first extraction) (✅)
+
+#### Step 4.7: UI/UX Standardization
+- [x] Standardized Item Delete: Vibrant red rounded squares inside cards across all modes (✅)
+- [x] Multi-Mode Clarity: Distinct "Edit" vs "Review" workflows with context-aware labels (✅)
+- [x] Sidebar Fix: Responsive toggle behavior across all screen sizes (✅)
+- [x] Tag Autocomplete: Alphabetical sorting and "General" tag permanence (✅)
+- [x] Active Tag Suggester: Only shows tags with unassigned orders in intake forms (✅)

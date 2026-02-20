@@ -25,7 +25,7 @@ interface LocationAutocompleteProps {
 
 export function LocationAutocomplete({ onSelect, defaultValue = '' }: LocationAutocompleteProps) {
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(defaultValue);
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -51,15 +51,24 @@ export function LocationAutocomplete({ onSelect, defaultValue = '' }: LocationAu
   const filteredLocations = useMemo(() => {
     if (!search || search.length < 3) return [];
     
-    const searchLower = search.toLowerCase();
+    const tokens = search.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+    if (tokens.length === 0) return [];
+
     return locations
       .filter((loc) => {
-        return (
-          loc.province_name.toLowerCase().includes(searchLower) ||
-          loc.city_name.toLowerCase().includes(searchLower) ||
-          loc.district_name.toLowerCase().includes(searchLower) ||
-          loc.subdistrict_name.toLowerCase().includes(searchLower) ||
-          loc.postal_code.includes(searchLower)
+        const province = loc.province_name.toLowerCase();
+        const city = loc.city_name.toLowerCase();
+        const district = loc.district_name.toLowerCase();
+        const subdistrict = loc.subdistrict_name.toLowerCase();
+        const postal = loc.postal_code.toLowerCase();
+
+        // Every token must match at least one field
+        return tokens.every(token => 
+          province.includes(token) ||
+          city.includes(token) ||
+          district.includes(token) ||
+          subdistrict.includes(token) ||
+          postal.includes(token)
         );
       })
       .slice(0, 10);
@@ -80,14 +89,6 @@ export function LocationAutocomplete({ onSelect, defaultValue = '' }: LocationAu
     }
   }, [selectedIndex, open]);
 
-  // Control popover based on focus state and search length
-  useEffect(() => {
-    if (isFocused && search.length >= 3) {
-      setOpen(true);
-    } else {
-      setOpen(false);
-    }
-  }, [isFocused, search]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!open) {
@@ -111,6 +112,7 @@ export function LocationAutocomplete({ onSelect, defaultValue = '' }: LocationAu
       onSelect(loc);
       setSearch(`${loc.subdistrict_name}, ${loc.postal_code}`);
       setIsFocused(false);
+      setOpen(false);
     } else if (e.key === 'Escape') {
       setOpen(false);
     }
@@ -118,21 +120,36 @@ export function LocationAutocomplete({ onSelect, defaultValue = '' }: LocationAu
 
   return (
     <div className="space-y-1.5 w-full">
-      <Popover open={open} onOpenChange={setOpen} modal={false}>
+      <Popover 
+        open={open} 
+        onOpenChange={(val) => {
+          setOpen(val);
+          if (!val) setIsFocused(false);
+        }} 
+        modal={false}
+      >
         <PopoverAnchor asChild>
           <div className="relative group cursor-pointer w-full">
             <Input
-              value={search || defaultValue}
+              value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
+                if (e.target.value.length >= 3) setOpen(true);
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => {
                 setIsFocused(true);
+                if (search.length >= 3) setOpen(true);
+              }}
+              onClick={() => {
+                if (search.length >= 3) setOpen(true);
               }}
               onBlur={() => {
-                // Delay to allow click events on items to fire
-                setTimeout(() => setIsFocused(false), 150);
+                // Short delay to allow result selection
+                setTimeout(() => {
+                  setIsFocused(false);
+                  setOpen(false);
+                }, 200);
               }}
               placeholder="Cari Kelurahan, Kecamatan, Kota, atau Kodepos..."
               className="h-9 pr-10 rounded-md text-sm bg-background border-border/60 transition-all focus:ring-1 focus:ring-primary/20 w-full"
@@ -181,6 +198,7 @@ export function LocationAutocomplete({ onSelect, defaultValue = '' }: LocationAu
                       onSelect(loc);
                       setSearch(`${loc.subdistrict_name}, ${loc.postal_code}`);
                       setIsFocused(false);
+                      setOpen(false);
                     }}
                   >
                     <MapPin className={cn(

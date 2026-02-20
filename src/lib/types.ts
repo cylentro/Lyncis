@@ -1,5 +1,21 @@
 export type OrderStatus = 'unassigned' | 'staged' | 'processed';
 
+export type ServiceType = 'regular' | 'nextday' | 'sameday' | 'instant';
+
+export interface SenderAddress {
+    id: string;
+    label: string;
+    isDefault: boolean;
+    name: string;
+    phone: string;
+    addressRaw: string;
+    provinsi: string;
+    kota: string;
+    kecamatan: string;
+    kelurahan: string;
+    kodepos: string;
+}
+
 export interface JastipItem {
     id: string;
     name: string;
@@ -20,8 +36,10 @@ export interface Origin {
 export interface JastipOrder {
     id: string;
     createdAt: number;
+    updatedAt?: number;
     tag: string;
     status: OrderStatus;
+    batchId?: string;
 
     recipient: {
         name: string;
@@ -42,6 +60,8 @@ export interface JastipOrder {
         dimensions: { l: number; w: number; h: number };
         volumetricWeight: number;
         chargeableWeight: number;
+        serviceType?: ServiceType;
+        estimatedCost?: number;
     };
 
     metadata?: {

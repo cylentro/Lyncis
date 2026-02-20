@@ -564,7 +564,6 @@ Build the full Lyncis POC application following the Sequential 3-Phase approach 
   - [x] WhatsApp Parser: Regex-based engine for ID formats
   - [x] AI Fallback: Gemini Flash integration for messy text
   - [x] Intake UI: Tabbed Intake Zone in Bucket Page
-  - [ ] Phase 3: Shipping & Logistics Hub
 ---
 
 ### PHASE 3 — Fulfillment & Batching Logic
@@ -840,6 +839,35 @@ Build the full Lyncis POC application following the Sequential 3-Phase approach 
   # Test on mobile viewport (320px, 375px, 768px, 1024px)
   # All interactive elements accessible
   # No broken layouts
+  ```
+---
+
+#### Step 4.6: Advanced AI & Parsing Refinements
+
+- **Files:** `src/lib/llm-parser.ts`, `src/lib/location-matcher.ts`
+- **Change:**
+  - **Model-Specific Prompts**: Gemini uses `responseSchema` for efficiency; Gemma uses a strict template.
+  - **Price Reconciliation**: 3-case failure recovery ( derive `unitPrice` from `total/qty` or `total` from `unit*qty`).
+  - **Structural Guardrails**: Rules to prevent ZIPCODE confusion and greedy boundary detection for address vs items.
+  - **Location Table Strictness**: Use the 80k record internal table as the source of truth; leave fields blank if confidence < 0.4.
+- **Verify:**
+  ```bash
+  npm run build
+  # Test WhatsApp extraction with zipcodes and mixed price formats
+  ```
+---
+
+#### Step 4.7: UI/UX Standardization
+
+- **Files:** `src/components/lyncis/intake/whatsapp-paste.tsx`, `src/components/lyncis/bucket/order-form-content.tsx`
+- **Change:**
+  - **Standardized Delete**: Implement red rounded square delete buttons across all modes (Manual/Edit/Review).
+  - **Hover UX**: Hide phone numbers and AI metadata during hover in extraction results to prevent UI clutter.
+  - **Auto-Reset View**: Ensure the WhatsApp paste area returns to the input state automatically when all extracted items are deleted.
+- **Verify:**
+  ```bash
+  npm run dev
+  # Validate hover behavior and card deletion resetting the view.
   ```
 ---
 

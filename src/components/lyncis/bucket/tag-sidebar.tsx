@@ -2,7 +2,7 @@
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Tag, X } from 'lucide-react';
+import { ChevronDown, Tag, X, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { SheetClose } from '@/components/ui/sheet';
@@ -13,6 +13,8 @@ interface TagInfo {
   name: string;
   total: number;
   unassigned: number;
+  processed: number;
+  staged: number;
 }
 
 interface TagSidebarProps {
@@ -34,9 +36,11 @@ export function TagSidebar({
 }: TagSidebarProps) {
   const [archiveOpen, setArchiveOpen] = useState(false);
 
-  // Split into active and archived
-  const activeTags = tags.filter((t) => t.unassigned > 0);
-  const archivedTags = tags.filter((t) => t.unassigned === 0);
+  // A tag is archived (Riwayat) if all its orders have been shipped (processed)
+  // meaning processed === total and total > 0.
+  // Active tags are those that are not archived.
+  const archivedTags = tags.filter((t) => t.total > 0 && t.total === t.processed);
+  const activeTags = tags.filter((t) => !(t.total > 0 && t.total === t.processed));
 
   return (
     <div className="flex flex-col h-full py-4">
@@ -79,10 +83,6 @@ export function TagSidebar({
               {totalOrders}
             </Badge>
           </button>
-
-          <div className="pt-3 pb-2">
-             <div className="h-px bg-border/50 mx-1" />
-          </div>
 
           {/* Active Tags */}
           {activeTags.map((tag) => (

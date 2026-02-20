@@ -12,7 +12,13 @@ import {
   bulkUpdateOrders,
   deleteOrders,
   markOrdersTriaged,
+  useStagedOrders,
+  stageOrders,
+  unstageOrders,
 } from '@/hooks/use-lyncis-db';
+import { v4 as uuidv4 } from 'uuid';
+import { BatchWizard } from '@/components/lyncis/fulfillment/batch-wizard';
+import { StickySelectionBar } from '@/components/lyncis/bucket/sticky-selection-bar';
 import { JastipOrder } from '@/lib/types';
 import { OrderTable } from '@/components/lyncis/bucket/order-table';
 import { TagSidebar } from '@/components/lyncis/bucket/tag-sidebar';
@@ -20,6 +26,7 @@ import { OrderEditSheet } from '@/components/lyncis/bucket/order-edit-sheet';
 import { UnifiedIntakePanel } from '@/components/lyncis/intake/unified-intake-dialog';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertDialog,
@@ -47,13 +54,20 @@ export default function BucketPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [sheetMode, setSheetMode] = useState<'edit' | 'review'>('edit');
+  
+  // Batch Wizard State
+  const [batchWizardOpen, setBatchWizardOpen] = useState(false);
+  const [activeBatchId, setActiveBatchId] = useState<string | null>(null);
 
   // ─── Queries ────────────────────────────────────────────────
   const orders = useOrders(
-    selectedTag ? { tag: selectedTag } : undefined
+    selectedTag === '___staged___' 
+      ? { status: 'staged' }
+      : (selectedTag ? { tag: selectedTag } : undefined)
   );
   const allTags = useAllTags();
   const tagCounts = useTagCounts();
+  const stagedOrders = useStagedOrders();
 
   // ─── Derived ────────────────────────────────────────────────
   const tagInfos = useMemo(() => {
@@ -62,6 +76,8 @@ export default function BucketPage() {
       name: tag,
       total: tagCounts[tag]?.total ?? 0,
       unassigned: tagCounts[tag]?.unassigned ?? 0,
+      processed: tagCounts[tag]?.processed ?? 0,
+      staged: tagCounts[tag]?.staged ?? 0,
     }));
   }, [allTags, tagCounts]);
 
@@ -69,6 +85,22 @@ export default function BucketPage() {
     if (!tagCounts) return 0;
     return Object.values(tagCounts).reduce((sum, c) => sum + c.total, 0);
   }, [tagCounts]);
+
+  // Orders that are currently selected
+  const selectedOrdersData = useMemo(
+    () => (orders ?? []).filter((o) => selectedIds.has(o.id)),
+    [orders, selectedIds]
+  );
+
+  const selectedUnassignedCount = useMemo(
+    () => selectedOrdersData.filter(o => o.status !== 'staged').length,
+    [selectedOrdersData]
+  );
+  
+  const selectedStagedCount = useMemo(
+    () => selectedOrdersData.filter(o => o.status === 'staged').length,
+    [selectedOrdersData]
+  );
 
   // Orders that came from Excel and haven't been reviewed yet
   const triageOrders = useMemo(
@@ -100,6 +132,11 @@ export default function BucketPage() {
     setSheetMode('edit');
     setEditDialogOpen(true);
   }, []);
+
+  const handleEditById = useCallback((id: string) => {
+    const order = (orders ?? []).find(o => o.id === id) || (stagedOrders ?? []).find(o => o.id === id);
+    if (order) handleEdit(order);
+  }, [orders, stagedOrders, handleEdit]);
 
   const handleReview = useCallback((order: JastipOrder) => {
     setEditingOrder(order);
@@ -200,6 +237,40 @@ export default function BucketPage() {
     setSidebarOpen(false);
   }, []);
 
+  // ─── Batch Handlers ──────────────────────────────────────────
+  
+  // Create NEW batch with selected orders
+  const handleProcessBatch = useCallback(async () => {
+    const newBatchId = uuidv4();
+    const ids = Array.from(selectedIds);
+    await stageOrders(ids, newBatchId);
+    
+    setActiveBatchId(newBatchId);
+    setBatchWizardOpen(true);
+    setSelectedIds(new Set());
+  }, [selectedIds]);
+
+  // Add selected orders to EXISTING active batch
+  const handleAddToBatch = useCallback(async () => {
+    // If we have staged orders, use their batch ID
+    // If multiple batch IDs exist in staged (unlikely in this flow), pick the first one
+    const existingBatchId = stagedOrders?.[0]?.batchId || uuidv4();
+    
+    const ids = Array.from(selectedIds);
+    await stageOrders(ids, existingBatchId);
+    
+    // setActiveBatchId(existingBatchId); // Optional: switch active context
+    setSelectedIds(new Set());
+    toast.success("Pesanan ditambahkan ke Batch");
+  }, [selectedIds, stagedOrders]);
+
+  const handleRemoveFromStaged = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    await unstageOrders(ids);
+    setSelectedIds(new Set());
+    toast.success("Pesanan dikeluarkan dari Batch");
+  }, [selectedIds]);
+
   // ─── Sidebar Content Renderer ─────────────────────────────
   const renderSidebar = (showMobileClose = false) => (
     <TagSidebar
@@ -257,9 +328,26 @@ export default function BucketPage() {
               <span className="h-1 w-1 rounded-full bg-primary/30" />
               <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                 {orders?.length ?? 0} pesanan
-                {selectedTag ? ` • ${selectedTag}` : ''}
+                {selectedTag === '___staged___' ? ' • Batch Pengiriman' : (selectedTag ? ` • ${selectedTag}` : '')}
               </span>
             </div>
+
+            {/* Shopify-style Cart Trigger */}
+            {stagedOrders && stagedOrders.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setBatchWizardOpen(true)}
+                className="h-8 gap-1.5 border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 active:scale-95 transition-all"
+              >
+                <Package className="h-3.5 w-3.5" />
+                Batch
+                <Badge variant="default" className="h-4 min-w-[1rem] px-1 bg-blue-600 text-white text-[9px] ml-0.5">
+                  {stagedOrders.length}
+                </Badge>
+              </Button>
+            )}
+
             <Button size="sm" onClick={() => setIntakePanelOpen(true)} className="h-8 gap-1.5 active:scale-95 transition-transform duration-200 rounded-md">
               <Plus className="h-3.5 w-3.5" />
               Tambah <span className="hidden sm:inline">Pesanan</span>
@@ -360,53 +448,23 @@ export default function BucketPage() {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* ── Bulk Actions Floating Bar ── */}
-      <AnimatePresence>
-        {selectedIds.size > 0 && (
-          <motion.div 
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60]"
-          >
-            <div className="flex items-center gap-4 bg-foreground/95 backdrop-blur-md px-6 py-3 rounded-full shadow-2xl border border-white/10 text-background min-w-[320px] justify-between">
-              <div className="flex items-center gap-3 pr-4 border-r border-white/10">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={handleDeselectAll}
-                  className="h-8 w-8 hover:bg-white/10 text-white rounded-full"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold leading-none">{selectedIds.size} terpilih</span>
-                  <span className="text-[9px] text-white/50 uppercase font-black tracking-widest mt-0.5">Bulk Actions</span>
-                </div>
-              </div>
+      <BatchWizard 
+        open={batchWizardOpen} 
+        onOpenChange={setBatchWizardOpen}
+        currentBatchId={activeBatchId}
+        onEditOrder={handleEditById}
+      />
 
-              <div className="flex items-center gap-2">
-                <Button 
-                  size="sm" 
-                  onClick={handleBulkConfirm}
-                  className="h-9 px-4 gap-1.5 bg-green-500 hover:bg-green-600 text-white border-0 font-bold text-xs rounded-full shadow-lg shadow-green-500/20 active:scale-95 transition-transform"
-                >
-                  <Check className="h-3.5 w-3.5" />
-                  Konfirmasi
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={handleBulkDelete}
-                  className="h-9 px-4 gap-1.5 bg-destructive hover:bg-destructive/90 text-white border-0 font-bold text-xs rounded-full shadow-lg shadow-destructive/20 active:scale-95 transition-transform"
-                >
-                  <Trash className="h-3.5 w-3.5" />
-                  Hapus
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <StickySelectionBar 
+        totalSelected={selectedIds.size}
+        unassignedSelected={selectedUnassignedCount}
+        stagedSelected={selectedStagedCount}
+        onMoveToStaged={handleAddToBatch}
+        onRemoveFromStaged={handleRemoveFromStaged}
+        onDelete={handleBulkDelete}
+        onDeselect={handleDeselectAll}
+      />
     </div>
   );
 }
+

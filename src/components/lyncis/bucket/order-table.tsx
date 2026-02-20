@@ -95,7 +95,7 @@ export function OrderTable({
 
   // ── Filtered Data ──
   const filteredOrders = useMemo(() => {
-    return orders.filter((o) => {
+    const result = orders.filter((o) => {
       const matchesSearch = 
         o.recipient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (o.recipient.phone && o.recipient.phone.includes(searchTerm)) ||
@@ -108,6 +108,23 @@ export function OrderTable({
       const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
+
+    result.sort((a, b) => {
+      if (statusFilter === 'processed') {
+        // Descending by updatedAt (fallback generated at createdAt)
+        const aTime = a.updatedAt || a.createdAt;
+        const bTime = b.updatedAt || b.createdAt;
+        return bTime - aTime;
+      }
+      if (statusFilter === 'all') {
+        // Descending by createdAt
+        return b.createdAt - a.createdAt;
+      }
+      // Ascending by createdAt for everything else (unassigned, staged, needs-review)
+      return a.createdAt - b.createdAt;
+    });
+
+    return result;
   }, [orders, searchTerm, statusFilter]);
 
   // ── Pagination ──
@@ -318,7 +335,7 @@ export function OrderTable({
                             size="icon" 
                             className="h-8 w-8 text-green-600 hover:bg-green-100/50 transition-all border border-transparent hover:border-green-200" 
                             onClick={() => onConfirm(order)}
-                            title="Siap Kirim"
+                            title="Pindah ke Batch"
                           >
                             <CheckCircle2 className="h-4 w-4" />
                           </Button>

@@ -18,11 +18,11 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 - **Intelligent Processing**: Automatic parser selection based on confidence scores
 - **Tag Autocomplete**: Smart filtering showing only active tags
 
-### Phase 3: Fulfillment & Batching (🚧 Planned)
-- Multi-select order processing
-- Logistics calculations (volumetric weight, chargeable weight)
-- Batch drawer with origin selection
-- Floating action bar for bulk operations
+### Phase 3: Fulfillment & Batching (✅ Complete)
+- Multi-select order processing with sticky action bar
+- Logistics calculations (volumetric weight, chargeable weight, zone-based pricing)
+- Batch wizard with origin selection and validation gate
+- Seamless tag transition (Active -> Archived / Riwayat)
 
 ### Phase 4: Polish & PWA (🚧 In Progress)
 - **Indonesian Location Dictionary**: Integrated 80k+ records (BPS/Postal codes) with smart alias matching (✅ Complete)
@@ -118,11 +118,9 @@ src/
 - **Advanced Price Reconciliation**: 3-case back-calculation logic for missing unit or total prices in AI extraction (✅ Complete)
 - **Structural Parsing & AI Guardrails**: Enhanced address/item separation with zipcode awareness and strict location lookup logic (✅ Complete)
 
-**Next Up: Phase 3** 🚧
-- Multi-select state manager
-- Floating action bar
-- Logistics calculations
-- Batch processing drawer
+**Next Up: Phase 4 Polish** 🚧
+- PWA Configuration
+- Final production layout tweaks
 
 ## 🔧 Development
 
@@ -143,5 +141,5 @@ This project is part of the Lyncis POC initiative.
 
 ---
 
-**Last Updated**: February 19, 2026  
+**Last Updated**: February 20, 2026  
 **Build Status**: ✅ Passing production build (Next.js 16)

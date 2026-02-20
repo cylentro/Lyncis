@@ -23,10 +23,13 @@ If `{{input}}` is empty or missing, ask the user to restate the task in one sent
 After generating the brainstorm content, you MUST write it to disk using this exact procedure:
 
 1) Output the brainstorm markdown content first (the sections above).
-2) Then immediately run:
+2) You must define the topic for the title
+3) Brainstorm document is a living artifact, your goal is to enrich the document through the discussion and not removing any detail
+4) If user discuss a micro topic inside the brainstorm document, focus on that point without removing any unrelated detail
+5) Then immediately run:
 
 ```bash
-python .agent/skills/superpowers-workflow/scripts/write_artifact.py --path artifacts/superpowers/brainstorm.md
+python .agent/skills/superpowers-workflow/scripts/write_artifact.py --path artifacts/superpowers/brainstorm-[topic].md
 
 ```
 
@@ -34,5 +37,5 @@ Provide the brainstorm markdown as stdin to the command.
 
 After writing, confirm it exists by listing artifacts/superpowers/.
 
-If you cannot run the command, say so explicitly and instruct the user to copy/paste the brainstorm output into artifacts/superpowers/brainstorm.md.
+If you cannot run the command, say so explicitly and instruct the user to copy/paste the brainstorm output into artifacts/superpowers/brainstorm-[topic].md.
 Do not implement changes in this workflow. Stop after persistence.
