@@ -1,8 +1,8 @@
 /**
- * Format a number as IDR currency (e.g., Rp 150.000)
+ * Format a number as IDR currency (e.g., Rp 150.000 or IDR 150,000)
  */
-export function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('id-ID', {
+export function formatCurrency(amount: number, locale: string = 'id-ID'): string {
+    return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: 'IDR',
         minimumFractionDigits: 0,
@@ -11,11 +11,10 @@ export function formatCurrency(amount: number): string {
 }
 
 /**
- * Format weight in kg (e.g., 1,5 kg)
- * Note: uses id-ID locale so decimal uses comma
+ * Format weight in kg (e.g., 1,5 kg or 1.5 kg)
  */
-export function formatWeight(weight: number): string {
-    return (weight || 0).toLocaleString('id-ID', {
+export function formatWeight(weight: number, locale: string = 'id-ID'): string {
+    return (weight || 0).toLocaleString(locale, {
         minimumFractionDigits: 1,
         maximumFractionDigits: 2,
     }) + ' kg';

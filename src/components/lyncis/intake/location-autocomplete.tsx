@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverAnchor,
 } from '@/components/ui/popover';
+import { useLanguage } from '@/components/providers/language-provider';
 
 interface LocationItem {
   province_name: string;
@@ -24,6 +25,7 @@ interface LocationAutocompleteProps {
 }
 
 export function LocationAutocomplete({ onSelect, defaultValue = '' }: LocationAutocompleteProps) {
+  const { dict } = useLanguage();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState(defaultValue);
   const [locations, setLocations] = useState<LocationItem[]>([]);
@@ -151,7 +153,7 @@ export function LocationAutocomplete({ onSelect, defaultValue = '' }: LocationAu
                   setOpen(false);
                 }, 200);
               }}
-              placeholder="Cari Kelurahan, Kecamatan, Kota, atau Kodepos..."
+              placeholder={dict.orders.search_location}
               className="h-9 pr-10 rounded-md text-sm bg-background border-border/60 transition-all focus:ring-1 focus:ring-primary/20 w-full"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors pointer-events-none">
@@ -170,17 +172,17 @@ export function LocationAutocomplete({ onSelect, defaultValue = '' }: LocationAu
           <div className="max-h-[300px] overflow-y-auto overflow-x-hidden">
             {isLoading && (
               <div className="px-4 py-8 text-center text-xs text-muted-foreground animate-pulse bg-muted/5">
-                Memuat data lokasi...
+                {dict.common.loading}
               </div>
             )}
             {!isLoading && search.length < 3 && (
               <div className="px-4 py-8 text-center text-xs text-muted-foreground italic bg-muted/5">
-                Ketik minimal 3 karakter untuk mencari...
+                {dict.common.type_min_chars.replace('{count}', '3')}
               </div>
             )}
             {!isLoading && search.length >= 3 && filteredLocations.length === 0 && (
               <div className="px-4 py-8 text-center text-xs text-muted-foreground italic bg-muted/5">
-                Lokasi tidak ditemukan
+                {dict.common.no_results}
               </div>
             )}
             {search.length >= 3 && filteredLocations.length > 0 && (
@@ -226,13 +228,13 @@ export function LocationAutocomplete({ onSelect, defaultValue = '' }: LocationAu
           </div>
           {search.length >= 3 && filteredLocations.length > 0 && (
             <div className="px-2 py-1.5 border-t bg-muted/20 flex items-center justify-between">
-              <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tight">Navigation</span>
+              <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tight">{dict.common.navigation}</span>
               <div className="flex items-center gap-2">
                 <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
-                  <kbd className="px-1 rounded bg-background border border-border/60 shadow-xs">↑↓</kbd> Pilih
+                  <kbd className="px-1 rounded bg-background border border-border/60 shadow-xs">↑↓</kbd> {dict.common.select}
                 </span>
                 <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
-                  <kbd className="px-1 rounded bg-background border border-border/60 shadow-xs">↵</kbd> Konfirmasi
+                  <kbd className="px-1 rounded bg-background border border-border/60 shadow-xs">↵</kbd> {dict.common.confirm}
                 </span>
               </div>
             </div>

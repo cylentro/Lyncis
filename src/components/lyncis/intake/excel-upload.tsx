@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,9 +9,9 @@ import { convertRowsToOrders } from '@/lib/excel-to-orders';
 import { ColumnMappingView } from './column-mapping-view';
 import { toast } from 'sonner';
 import { JastipOrder } from '@/lib/types';
-import { useEffect } from 'react';
 import { getParserConfig } from '@/lib/config-actions';
 import { TagAutocomplete } from './tag-autocomplete';
+import { useLanguage } from '@/components/providers/language-provider';
 
 interface ExcelUploadProps {
   onImport: (orders: Omit<JastipOrder, 'id'>[]) => Promise<void>;
@@ -19,13 +19,14 @@ interface ExcelUploadProps {
 }
 
 export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
+  const { dict } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [data, setData] = useState<ExcelParseResult | null>(null);
   const [headerHash, setHeaderHash] = useState<string>('');
   const [isParsing, setIsParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mappingDialogOpen, setMappingDialogOpen] = useState(false);
-  const [defaultTag, setDefaultTag] = useState('General');
+  const [defaultTag, setDefaultTag] = useState(dict.common.general);
   const [activeTab, setActiveTab] = useState('manual');
   
   const [config, setConfig] = useState<{
@@ -51,7 +52,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
     ];
     
     if (!validTypes.includes(selectedFile.type) && !selectedFile.name.endsWith('.csv')) {
-      toast.error('Hanya menerima file Excel (.xlsx, .xls) atau CSV (.csv)');
+      toast.error(dict.intake.excel_filter_error);
       return;
     }
 
@@ -62,7 +63,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
     try {
       const result = await parseExcelFile(selectedFile);
       if (result.rows.length === 0) {
-        throw new Error('File kosong atau tidak memiliki data.');
+        throw new Error(dict.intake.empty_file_error);
       }
       
       const hash = generateHeaderHash(result.headers);
@@ -71,13 +72,13 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
       
       const savedMapping = loadSavedMapping(hash);
       if (savedMapping) {
-        toast.info('Format dikenali! Menggunakan pemetaan kolom yang tersimpan.');
+        toast.info(dict.intake.format_recognized);
       } else {
         setView('mapping');
       }
     } catch (err: any) {
-      setError(err.message || 'Gagal memproses file.');
-      toast.error(err.message || 'Gagal memproses file.');
+      setError(err.message || dict.intake.error_import);
+      toast.error(err.message || dict.intake.error_import);
     } finally {
       setIsParsing(false);
     }
@@ -85,9 +86,8 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
 
   const handleImport = async (mapping: Record<string, string>) => {
     if (!data) return;
-    
     setIsParsing(true);
-    const aiToastId = config?.enableAI ? toast.loading("Memproses data... AI akan digunakan jika mapping kolom kurang jelas.") : null;
+    const aiToastId = config?.enableAI ? toast.loading(dict.intake.ai_processing) : null;
 
     try {
       const orders = await convertRowsToOrders(
@@ -102,10 +102,10 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
       );
       if (aiToastId) toast.dismiss(aiToastId);
       await onImport(orders);
-      toast.success(`Berhasil mengimpor ${orders.length} pesanan.`);
+      toast.success(dict.intake.success_import.replace('{count}', orders.length.toString()));
       clearFile();
     } catch (err) {
-      toast.error('Gagal mengimpor data ke database.');
+      toast.error(dict.intake.error_import);
     } finally {
       setIsParsing(false);
     }
@@ -162,7 +162,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
           <div className="text-center">
             <h3 className="text-sm font-bold">{file.name}</h3>
             <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-1">
-              {data.rows.length} Baris Terdeteksi
+              {dict.intake.rows_detected.replace('{count}', data.rows.length.toString())}
             </p>
           </div>
           
@@ -173,7 +173,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
               className="text-muted-foreground hover:text-destructive text-[10px] font-bold h-8 px-3"
               onClick={clearFile}
             >
-              <X className="h-4 w-4 mr-1.5" /> Ganti File
+              <X className="h-4 w-4 mr-1.5" /> {dict.intake.change_file}
             </Button>
             <Button
               variant="ghost"
@@ -181,7 +181,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
               className="text-muted-foreground hover:text-primary text-[10px] font-bold h-8 px-3"
               onClick={() => setView('mapping')}
             >
-              <SlidersHorizontal className="h-4 w-4 mr-1.5" /> Atur Kolom
+              <SlidersHorizontal className="h-4 w-4 mr-1.5" /> {dict.intake.configure_columns}
             </Button>
           </div>
         </div>
@@ -189,7 +189,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
         <div className="space-y-6 bg-muted/30 p-5 rounded-2xl border border-border/50">
           <div className="space-y-2">
             <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
-              Tag Default (Batch)
+              {dict.intake.default_tag}
             </Label>
             <TagAutocomplete
               id="excel-tag-autocomplete"
@@ -201,7 +201,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
 
           <Button className="w-full h-11 font-bold shadow-lg shadow-primary/20" onClick={startImportWithCurrentMapping} disabled={isParsing}>
             {isParsing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
-            {isParsing ? 'Mengimpor...' : 'Gas Impor Sekarang'}
+            {isParsing ? dict.intake.importing : dict.intake.import_now}
           </Button>
         </div>
       </div>
@@ -226,7 +226,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
       {isParsing ? (
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 text-primary animate-spin" />
-          <p className="text-sm font-medium animate-pulse">Memproses file...</p>
+          <p className="text-sm font-medium animate-pulse">{dict.intake.processing}</p>
         </div>
       ) : error ? (
         <div className="flex flex-col items-center gap-2 text-destructive">
@@ -237,7 +237,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
             e.stopPropagation();
             clearFile();
           }}>
-            Coba File Lain
+            {dict.common.try_again}
           </Button>
         </div>
       ) : (
@@ -245,9 +245,9 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
           <div className="rounded-md bg-primary/5 p-4 mb-4 group-hover:bg-primary/10 transition-colors">
             <Upload className="h-8 w-8 text-primary" />
           </div>
-          <p className="text-sm font-semibold mb-1">Klik atau seret file Excel/CSV ke sini</p>
+          <p className="text-sm font-semibold mb-1">{dict.intake.upload_prompt}</p>
           <p className="text-xs text-muted-foreground text-center">
-            Kami akan mencoba mencocokkan kolom secara otomatis
+            {dict.intake.upload_hint}
           </p>
         </>
       )}

@@ -180,11 +180,11 @@ export default function BucketPage() {
     if (validIds.length > 0) {
       await bulkUpdateOrders(validIds, { status: 'staged' });
       setSelectedIds(new Set());
-      toast.success(`${validIds.length} pesanan berhasil dikonfirmasi`);
+      toast.success(dict.toast.success_confirm_list.replace('{count}', validIds.length.toString()));
     }
 
     if (skippedCount > 0) {
-      toast.warning(`${skippedCount} pesanan dilewati karena perlu review manual.`);
+      toast.warning(dict.toast.warning_skipped_review.replace('{count}', skippedCount.toString()));
     }
   }, [selectedIds, orders]);
 
@@ -192,8 +192,8 @@ export default function BucketPage() {
     const ids = Array.from(selectedIds);
     await deleteOrders(ids);
     setSelectedIds(new Set());
-    toast.success(`${ids.length} pesanan berhasil dihapus`);
-  }, [selectedIds]);
+    toast.success(dict.toast.success_delete_list.replace('{count}', ids.length.toString()));
+  }, [selectedIds, dict.toast.success_delete_list]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (deletingOrder) {
@@ -224,15 +224,15 @@ export default function BucketPage() {
 
   const handleApproveOne = useCallback(async (id: string) => {
     await markOrdersTriaged([id]);
-    toast.success('Pesanan disetujui');
-  }, []);
+    toast.success(dict.toast.success_approve);
+  }, [dict.toast.success_approve]);
 
   const handleApproveAll = useCallback(async () => {
     const ids = triageOrders.map((o) => o.id);
     if (ids.length === 0) return;
     await markOrdersTriaged(ids);
-    toast.success(`${ids.length} pesanan Excel telah disetujui`);
-  }, [triageOrders]);
+    toast.success(dict.toast.success_approve_list.replace('{count}', ids.length.toString()));
+  }, [triageOrders, dict.toast.success_approve_list]);
 
   const handleTagSelect = useCallback((tag: string | null) => {
     setSelectedTag(tag);
@@ -264,15 +264,15 @@ export default function BucketPage() {
     
     // setActiveBatchId(existingBatchId); // Optional: switch active context
     setSelectedIds(new Set());
-    toast.success("Pesanan ditambahkan ke Batch");
-  }, [selectedIds, stagedOrders]);
+    toast.success(dict.toast.success_add_to_batch);
+  }, [selectedIds, stagedOrders, dict.toast.success_add_to_batch]);
 
   const handleRemoveFromStaged = useCallback(async () => {
     const ids = Array.from(selectedIds);
     await unstageOrders(ids);
     setSelectedIds(new Set());
-    toast.success("Pesanan dikeluarkan dari Batch");
-  }, [selectedIds]);
+    toast.success(dict.toast.success_remove_from_batch);
+  }, [selectedIds, dict.toast.success_remove_from_batch]);
 
   // ─── Sidebar Content Renderer ─────────────────────────────
   const renderSidebar = (showMobileClose = false) => (
@@ -314,8 +314,8 @@ export default function BucketPage() {
             </Button>
 
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
-                <Package className="h-5 w-5 text-primary" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 overflow-hidden">
+                <img src="/icon.svg" alt="Lyncis" className="h-5 w-5" />
               </div>
               <div>
                 <h1 className="text-sm font-bold tracking-tight">{dict.common.app_name}</h1>
@@ -439,7 +439,7 @@ export default function BucketPage() {
             <AlertDialogTitle>{dict.orders.delete_confirm_title}</AlertDialogTitle>
             <AlertDialogDescription>
               {dict.orders.delete_confirm_desc
-                .replace('{name}', deletingOrder?.recipient.name || 'Tanpa Nama')}
+                .replace('{name}', deletingOrder?.recipient.name || dict.orders.empty_name)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

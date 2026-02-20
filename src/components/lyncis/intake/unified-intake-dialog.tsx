@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, Plus, FileSpreadsheet, MessageSquare, ListPlus, X, Info } from 'lucide-react';
+import { Trash2, Plus, FileCheck, MessageSquare, ListPlus, X, Info } from 'lucide-react';
 import { JastipOrder, JastipItem } from '@/lib/types';
 import { toast } from 'sonner';
 import { ExcelUpload } from './excel-upload';
@@ -28,6 +28,7 @@ import { OrderFormContent } from '../bucket/order-form-content';
 import { cn } from '@/lib/utils';
 import { useActiveTags } from '@/hooks/use-lyncis-db';
 import { getParserConfig } from '@/lib/config-actions';
+import { useLanguage } from '@/components/providers/language-provider';
 
 // ─── Props ──────────────────────────────────────────────────
 
@@ -93,6 +94,7 @@ export function UnifiedIntakePanel({
   onBatchImport,
   allTagsData = [],
 }: UnifiedIntakePanelProps) {
+  const { dict } = useLanguage();
 
   const [formData, setFormData] = useState<Omit<JastipOrder, 'id'>>(
     createEmptyOrder()
@@ -178,20 +180,20 @@ export function UnifiedIntakePanel({
   const handleSaveManual = async () => {
     const finalTag = formData.tag.trim() || 'General';
     if (formData.items.length === 0) {
-      toast.error('Minimal 1 barang diperlukan');
+      toast.error(dict.intake.min_item_error);
       return;
     }
 
     try {
       await onSave({ ...formData, tag: finalTag, createdAt: Date.now() });
-      toast.success('Pesanan berhasil ditambahkan');
+      toast.success(dict.intake.success_add);
       setFormData(createEmptyOrder());
       // Suggest: Don't auto close if user wants to add multiple? 
       // User requested "friendly", maybe clear and stay open or close? 
       // For now, let's keep common behavior: close on success.
       onOpenChange(false);
     } catch (err) {
-      toast.error('Gagal menyimpan pesanan');
+      toast.error(dict.intake.error_add);
     }
   };
 
@@ -213,13 +215,13 @@ export function UnifiedIntakePanel({
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Plus className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold tracking-tight">Tambah Pesanan Baru</h2>
-              <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider opacity-70">
-                Input batch atau manual
-              </p>
-            </div>
+             </div>
+             <div>
+               <h2 className="text-base font-bold tracking-tight">{dict.intake.title}</h2>
+               <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider opacity-70">
+                 {dict.intake.desc}
+               </p>
+             </div>
           </div>
           
           <Button 
@@ -265,12 +267,14 @@ export function UnifiedIntakePanel({
                         style={{ zIndex: -1 }}
                       />
                     )}
-                    <span className="flex items-center gap-1.5 relative z-10">
-                      {tabValue === 'manual' && <ListPlus className="h-3.5 w-3.5" />}
-                      {tabValue === 'excel' && <FileSpreadsheet className="h-3.5 w-3.5" />}
-                      {tabValue === 'whatsapp' && <MessageSquare className="h-3.5 w-3.5" />}
-                      {tabValue.charAt(0).toUpperCase() + tabValue.slice(1)}
-                    </span>
+                     <span className="flex items-center gap-1.5 relative z-10">
+                       {tabValue === 'manual' && <ListPlus className="h-3.5 w-3.5" />}
+                       {tabValue === 'excel' && <FileCheck className="h-3.5 w-3.5" />}
+                       {tabValue === 'whatsapp' && <MessageSquare className="h-3.5 w-3.5" />}
+                       {tabValue === 'manual' && dict.intake.manual}
+                       {tabValue === 'excel' && dict.intake.excel}
+                       {tabValue === 'whatsapp' && dict.intake.whatsapp}
+                     </span>
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -289,14 +293,14 @@ export function UnifiedIntakePanel({
               </div>
             
             {/* ── Action Footer ── */}
-            <div className="shrink-0 p-5 bg-background border-t flex gap-3 z-30">
-              <Button variant="outline" className="flex-1 h-10 rounded-lg text-xs font-bold border-border/80 hover:bg-muted/50" onClick={() => onOpenChange(false)}>
-                Batal
-              </Button>
-              <Button className="flex-[2] h-10 rounded-md text-xs font-bold bg-black hover:bg-black/90 text-white transition-all active:scale-98" onClick={handleSaveManual}>
-                Simpan
-              </Button>
-            </div>
+             <div className="shrink-0 p-5 bg-background border-t flex gap-3 z-30">
+               <Button variant="outline" className="flex-1 h-10 rounded-lg text-xs font-bold border-border/80 hover:bg-muted/50" onClick={() => onOpenChange(false)}>
+                 {dict.common.cancel}
+               </Button>
+               <Button className="flex-[2] h-10 rounded-md text-xs font-bold bg-black hover:bg-black/90 text-white transition-all active:scale-98" onClick={handleSaveManual}>
+                 {dict.common.save}
+               </Button>
+             </div>
           </TabsContent>
         )}
 

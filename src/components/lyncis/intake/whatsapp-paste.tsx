@@ -38,6 +38,7 @@ import { TagAutocomplete } from './tag-autocomplete';
 import { cn } from '@/lib/utils';
 import { getParserConfig } from '@/lib/config-actions';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '@/components/providers/language-provider';
 
 interface WhatsAppPasteProps {
   onImport: (orders: Omit<JastipOrder, 'id'>[]) => Promise<void>;
@@ -46,6 +47,7 @@ interface WhatsAppPasteProps {
 }
 
 export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: WhatsAppPasteProps) {
+  const { dict } = useLanguage();
   const [text, setText] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [parsedOrders, setParsedOrders] = useState<Partial<JastipOrder>[]>([]);
@@ -134,11 +136,11 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
           const hasNoItems = regexResults.some(o => !o.items?.length);
           if (hasIncompleteContact || hasNoItems) {
             setIsWarningBatch(true);
-            toast.warning(`Berhasil mengenali ${regexResults.length} pesanan`, {
-              description: 'Beberapa informasi belum lengkap. Mohon periksa kembali.'
+            toast.warning(dict.intake.regex_recognized.replace('{count}', regexResults.length.toString()), {
+              description: dict.intake.regex_warning
             });
           } else {
-            toast.success(`Berhasil mengenali ${regexResults.length} pesanan`);
+            toast.success(dict.intake.regex_recognized.replace('{count}', regexResults.length.toString()));
           }
           return;
         }
@@ -154,10 +156,10 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
       if (enableAI) {
         if (!config?.hasApiKey) {
           console.warn("AI extraction requested but GEMINI_API_KEY is missing.");
-          toast.error("Ekstraksi AI tidak tersedia (API Key belum dikonfigurasi).");
+          toast.error(dict.intake.ai_error.split('.')[0] + '.');
         } else {
           // Show a subtle toast that AI is kicking in
-          const aiToastId = toast.loading("Menganalisis format pesanan dengan AI...");
+          const aiToastId = toast.loading(dict.intake.ai_processing);
           
           try {
             const llmResults = await parseWithLLM(text);
@@ -166,7 +168,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
             if (llmResults.length > 0) {
               setParsedOrders(llmResults);
               setIsInputCollapsed(true);
-              toast.success(`Berhasil mengekstrak ${llmResults.length} pesanan via AI`, {
+              toast.success(dict.intake.ai_success.replace('{count}', llmResults.length.toString()), {
                 icon: <Sparkles className="h-4 w-4 text-amber-500" />
               });
               return;
@@ -176,15 +178,15 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
             console.error("AI Parse Error:", err);
             
             // If AI specifically failed, notify the user that we are falling back to regex or standard methods
-            const errorMessage = err.message || "Gagal memproses dengan AI.";
+            const errorMessage = err.message || dict.intake.ai_error;
             toast.error(errorMessage, {
-              description: "Menggunakan ekstraksi pola standar sebagai cadangan."
+              description: dict.intake.ai_error.split('.')[1].trim()
             });
           }
         }
       } else if (regexResults.length === 0 || regexConfidence < threshold) {
         // Regex failed/weak and AI is explicitly disabled
-        toast.info("AI Parser dinonaktifkan. Menggunakan ekstraksi pola standar.");
+        toast.info(dict.intake.ai_error.split('.')[1].trim());
       }
 
       // 3. Last Resort: Use Regex results if present (even if low confidence)
@@ -199,14 +201,14 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
         setParsedOrders(validRegexResults);
         setIsInputCollapsed(true);
         setIsWarningBatch(true);
-        const warningDesc = 'Mohon periksa kembali kelengkapan data pesanan.';
+        const warningDesc = dict.intake.regex_warning;
           
-        toast.warning(`Berhasil mengenali ${validRegexResults.length} pesanan`, {
+        toast.warning(dict.intake.regex_recognized.replace('{count}', validRegexResults.length.toString()), {
           description: warningDesc
         });
       } else {
-        toast.error("Sistem tidak dapat mengenali pesanan.", {
-          description: "Pastikan teks berisi Nama dan Daftar Barang yang jelas (contoh: 2x Barang @10.000).",
+        toast.error(dict.intake.no_recognition, {
+          description: dict.intake.no_recognition_desc,
           duration: 5000
         });
       }
@@ -220,7 +222,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
     const validOrders = parsedOrders.filter(o => o.recipient?.name && o.items && o.items.length > 0);
     
     if (validOrders.length === 0) {
-      toast.error('Tidak ada data valid untuk diimpor. Pastikan nama dan barang terisi.');
+      toast.error(dict.intake.no_recognition + ' ' + dict.intake.no_recognition_desc);
       return;
     }
 
@@ -228,15 +230,15 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
       // Map back to default tag if empty, default to "General" if still empty
       const finalOrders = validOrders.map(o => ({
         ...o,
-        tag: o.tag || defaultTag || "General",
+        tag: o.tag || defaultTag || dict.common.general,
       })) as Omit<JastipOrder, 'id'>[];
 
       await onImport(finalOrders);
       setText('');
       setParsedOrders([]);
-      toast.success(`Berhasil mengimpor ${finalOrders.length} pesanan ke Bucket.`);
+      toast.success(dict.intake.success_import.replace('{count}', finalOrders.length.toString()));
     } catch (err) {
-      toast.error('Gagal mengimpor ke database.');
+      toast.error(dict.intake.error_import);
     }
   };
 
@@ -265,7 +267,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
       setParsedOrders(newOrders);
       setEditingIndex(null);
       setEditOrder(null);
-      toast.success('Pesanan diperbarui');
+      toast.success(dict.orders.success_update);
     }
   };
 
@@ -349,10 +351,10 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex flex-col gap-0.5">
-            <h3 className="text-xs font-black uppercase tracking-widest text-primary/80">Edit Detail Pesanan</h3>
+            <h3 className="text-xs font-black uppercase tracking-widest text-primary/80">{dict.intake.edit_detail}</h3>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <span className="font-bold bg-muted px-1.5 py-0.5 rounded text-foreground/70">#{editingIndex + 1}</span>
-              <span className="truncate max-w-[150px]">{editOrder?.recipient?.name || 'Tanpa Nama'}</span>
+              <span className="truncate max-w-[150px]">{editOrder?.recipient?.name || dict.orders.empty_name}</span>
             </div>
           </div>
         </div>
@@ -365,44 +367,44 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
              <div className="flex items-center justify-between px-1">
                <h4 className="text-[13px] font-bold flex items-center gap-2">
                  <span className="p-1 rounded bg-primary/10 text-primary"><ListPlus className="h-3.5 w-3.5" /></span>
-                 Informasi Penerima
+                 {dict.orders.recipient_info}
                </h4>
              </div>
 
              <div className="grid grid-cols-2 gap-3">
                <div className="space-y-1.5">
-                 <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Nama Penerima</Label>
+                 <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{dict.orders.full_name}</Label>
                  <Input 
                    className="h-9 text-sm rounded-md" 
                    value={editOrder?.recipient?.name || ''} 
                    onChange={(e) => updateEditRecipient('name', e.target.value)}
-                   placeholder="Nama"
+                   placeholder={dict.common.edit === 'Edit' ? 'Name' : 'Nama'}
                  />
                </div>
                <div className="space-y-1.5">
-                 <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">No. WhatsApp</Label>
+                 <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{dict.orders.phone_number}</Label>
                  <Input 
                    className="h-9 text-sm rounded-md" 
                    value={editOrder?.recipient?.phone || ''} 
                    onChange={(e) => updateEditRecipient('phone', e.target.value)}
-                   placeholder="081234567890"
+                   placeholder="0812..."
                  />
                </div>
              </div>
              <div className="space-y-3">
                <div className="space-y-1.5">
-                 <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Alamat (Jalan, No Rumah)</Label>
+                 <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{dict.orders.address_detail}</Label>
                  <Textarea 
                    className="text-sm rounded-md bg-background border-border resize-none" 
                    rows={2}
                    value={editOrder?.recipient?.addressRaw || ''} 
                    onChange={(e) => updateEditRecipient('addressRaw', e.target.value)}
-                   placeholder="Jl. Melati No. 5..."
+                   placeholder={dict.orders.address_placeholder}
                  />
                </div>
 
                <div className="space-y-1.5">
-                 <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Cari Area / Kode Pos</Label>
+                 <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{dict.orders.search_location}</Label>
                  <LocationAutocomplete 
                    onSelect={(loc) => {
                      setEditOrder(prev => ({
@@ -425,24 +427,24 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
                  <div className="p-3 rounded-md bg-muted/20 border border-border/40 animate-in fade-in slide-in-from-top-1">
                     <div className="grid grid-cols-2 gap-y-2 text-[11px]">
                       <div className="flex flex-col">
-                         <span className="text-muted-foreground uppercase font-bold text-[9px]">Provinsi</span>
+                         <span className="text-muted-foreground uppercase font-bold text-[9px]">{dict.orders.province}</span>
                          <span className="font-medium truncate">{editOrder.recipient!.provinsi}</span>
                       </div>
                       <div className="flex flex-col">
-                         <span className="text-muted-foreground uppercase font-bold text-[9px]">Kota/Kab</span>
+                         <span className="text-muted-foreground uppercase font-bold text-[9px]">{dict.orders.city}</span>
                          <span className="font-medium truncate">{editOrder.recipient!.kota}</span>
                       </div>
                       <div className="flex flex-col">
-                         <span className="text-muted-foreground uppercase font-bold text-[9px]">Kecamatan</span>
+                         <span className="text-muted-foreground uppercase font-bold text-[9px]">{dict.orders.district}</span>
                          <span className="font-medium truncate">{editOrder.recipient!.kecamatan}</span>
                       </div>
                       <div className="flex flex-col">
-                         <span className="text-muted-foreground uppercase font-bold text-[9px]">Kelurahan</span>
+                         <span className="text-muted-foreground uppercase font-bold text-[9px]">{dict.orders.subdistrict}</span>
                          <span className="font-medium truncate">{editOrder.recipient!.kelurahan}</span>
                       </div>
                     </div>
                     <div className="mt-2 pt-2 border-t border-border/20 flex items-baseline gap-1.5">
-                      <span className="text-muted-foreground uppercase font-bold text-[9px]">Kode Pos</span>
+                      <span className="text-muted-foreground uppercase font-bold text-[9px]">{dict.orders.postal_code}</span>
                       <span className="font-mono font-bold text-primary">{editOrder.recipient!.kodepos}</span>
                     </div>
                  </div>
@@ -457,10 +459,10 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
             <div className="flex items-center justify-between px-1">
               <h4 className="text-[13px] font-bold flex items-center gap-2">
                 <span className="p-1 rounded bg-primary/10 text-primary"><Plus className="h-3.5 w-3.5" /></span>
-                Daftar Barang
+                {dict.orders.item_list}
               </h4>
               <Badge variant="secondary" className="font-mono text-[9px] px-1.5 h-4.5 rounded bg-primary/5 text-primary border-primary/10">
-                {editOrder?.items?.length || 0} {(editOrder?.items?.length || 0) === 1 ? 'item' : 'items'}
+                {editOrder?.items?.length || 0} {(editOrder?.items?.length || 0) === 1 ? dict.common.items_count.split(' ')[1].toLowerCase() : dict.common.items_count_plural.split(' ')[1].toLowerCase()}
               </Badge>
             </div>
 
@@ -481,11 +483,11 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
                    
                    <div className="space-y-4">
                      <div>
-                       <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight ml-0.5">Deskripsi Barang</Label>
+                       <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight ml-0.5">{dict.intake.edit_item_desc}</Label>
                        <Input
                          value={item.name}
                          onChange={(e) => updateEditItem(i, { ...item, name: e.target.value })}
-                         placeholder="Contoh: Starbucks Tumbler"
+                         placeholder={dict.orders.item_name}
                          className="bg-muted/5 font-medium mt-1 h-9 border-transparent rounded-md text-sm"
                        />
                      </div>
@@ -501,7 +503,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
                          />
                        </div>
                        <div className="space-y-1">
-                         <Label className="text-[9px] uppercase text-muted-foreground font-bold text-center block">Harga Satuan</Label>
+                         <Label className="text-[9px] uppercase text-muted-foreground font-bold text-center block">{dict.intake.unit_price}</Label>
                           <Input 
                             type="text" 
                             className="h-8 px-2 text-xs bg-background border-border/60 rounded-md text-center" 
@@ -514,7 +516,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
                           />
                        </div>
                        <div className="space-y-1">
-                         <Label className="text-[9px] uppercase text-muted-foreground font-bold text-center block">Total Harga</Label>
+                         <Label className="text-[9px] uppercase text-muted-foreground font-bold text-center block">{dict.intake.total_price}</Label>
                           <Input 
                             type="text" 
                             className="h-8 px-1.5 text-xs bg-muted/20 border-border/60 rounded-md text-center" 
@@ -538,7 +540,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
                >
                  <div className="flex flex-col items-center gap-1.5">
                    <Plus className="h-5 w-5 group-hover:scale-110 transition-transform p-1 rounded-full bg-muted/40 group-hover:bg-primary/10" /> 
-                   <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Tambah Item Baru</span>
+                   <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{dict.intake.add_item}</span>
                  </div>
                </Button>
             </div>
@@ -548,10 +550,10 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
         {/* Footer Action Bar - Sticky Bottom */}
         <div className="shrink-0 p-4 border-t bg-background flex gap-3 z-10 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
            <Button variant="outline" className="flex-1 h-10 rounded-md text-xs font-bold border-border/80 hover:bg-muted/50" onClick={cancelEditing}>
-             Batal
+             {dict.common.cancel}
            </Button>
            <Button className="flex-[2] h-10 rounded-md text-xs font-bold bg-black hover:bg-black/90 text-white transition-all active:scale-98" onClick={saveEditing}>
-             Simpan
+             {dict.common.save}
            </Button>
         </div>
       </div>
@@ -570,7 +572,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
             <div className="flex items-center gap-2">
               <Label htmlFor="wa-text" className="text-sm font-bold flex items-center gap-2">
                 <MessageSquare className="h-3.5 w-3.5 text-blue-600" />
-                Raw Text WhatsApp
+                {dict.intake.raw_text_label}
               </Label>
               {!isInputCollapsed && (
                 <Button 
@@ -581,7 +583,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
                   disabled={isParsing || !text.trim()}
                 >
                   {isParsing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : null}
-                  Proses Teks (⌘ + ↵)
+                  {dict.intake.process_button} (⌘ + ↵)
                 </Button>
               )}
             </div>
@@ -593,9 +595,9 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
                 onClick={() => setIsInputCollapsed(!isInputCollapsed)}
               >
                 {isInputCollapsed ? (
-                  <><ChevronDown className="h-3 w-3 mr-1" /> Lihat Teks</>
+                  <><ChevronDown className="h-3 w-3 mr-1" /> {dict.intake.show_text}</>
                 ) : (
-                  <><ChevronUp className="h-3 w-3 mr-1" /> Sembunyikan</>
+                  <><ChevronUp className="h-3 w-3 mr-1" /> {dict.intake.hide_text}</>
                 )}
               </Button>
             )}
@@ -615,17 +617,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
                 <div className="space-y-4">
                   <Textarea
                     id="wa-text"
-                    placeholder={`Paste teks dari WhatsApp di sini...
-                    
-Contoh:
-Nama: Satria
-HP: 08123456789
-Alamat: Jl. Prof. DR. Satrio No.Kav.18, Kuningan, Karet Kuningan, Kecamatan Setiabudi, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12940, Indonesia
-Pesanan: 
-2x Pocky Matcha @30000
-3 Indomie Goreng Rendang 9000
-1 Teh Botol 250ml 5k
-3 Aqua 600ml @3k`}
+                    placeholder={dict.intake.placeholder}
                     className="min-h-[300px] max-h-[300px] font-mono text-sm w-full overflow-y-auto"
                     value={text}
                     onChange={(e) => setText(e.target.value)}
@@ -647,7 +639,7 @@ Pesanan:
                     ) : (
                       <Sparkles className="h-4 w-4 mr-2" />
                     )}
-                    Proses Teks
+                    {isParsing ? dict.intake.processing : dict.intake.process_button}
                   </Button>
                 </div>
               </motion.div>
@@ -659,7 +651,7 @@ Pesanan:
           <div className="animate-in fade-in slide-in-from-top-2 w-full">
             <div className="sticky top-0 bg-background/95 backdrop-blur-sm z-20 flex items-center justify-between py-2.5 px-5 border-b mb-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
               <h4 className="text-sm font-bold flex items-center gap-2">
-                Preview Hasil Ekstraksi
+                {dict.intake.preview_title}
                 <Badge variant="secondary">{parsedOrders.length}</Badge>
               </h4>
               <Button
@@ -671,7 +663,7 @@ Pesanan:
                   setIsInputCollapsed(false);
                 }}
               >
-                Reset
+                {dict.intake.reset}
               </Button>
             </div>
 
@@ -715,17 +707,17 @@ Pesanan:
                             {showWarning ? (
                               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive/40 animate-pulse shrink-0">
                                 <AlertTriangle className="h-3 w-3 text-destructive" />
-                                <span className="text-[10px] font-bold text-destructive uppercase tracking-tighter">Review Diperlukan</span>
+                                <span className="text-[10px] font-bold text-destructive uppercase tracking-tighter">{dict.wizard.not_ready}</span>
                               </div>
                             ) : (
                               <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
                             )}
-                            <span className="text-sm font-bold break-words truncate">{order.recipient?.name || 'Tanpa Nama'}</span>
+                            <span className="text-sm font-bold break-words truncate">{order.recipient?.name || dict.orders.empty_name}</span>
                             {/* Phone — inline beside name (original position) */}
                             {isMissingPhone ? (
                               <div className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 shrink-0">
                                 <AlertCircle className="h-2.5 w-2.5" />
-                                No HP?
+                                {dict.wizard.phone_missing}
                               </div>
                             ) : (
                               <span className="text-xs text-muted-foreground shrink-0 transition-all duration-200">• {order.recipient?.phone}</span>
@@ -746,7 +738,7 @@ Pesanan:
                         {isMissingAddress ? (
                           <div className="flex items-center gap-1 text-[10px] font-bold mb-2 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40">
                             <AlertCircle className="h-3 w-3 shrink-0" />
-                            <span>Alamat belum diisi</span>
+                            <span>{dict.intake.regex_warning.split('.')[0]}</span>
                           </div>
                         ) : (
                           <div className="text-[11px] text-muted-foreground/80 leading-snug mb-2 break-words">
@@ -764,14 +756,14 @@ Pesanan:
                         ) : (
                           <div className="flex items-center gap-1.5 text-[10px] text-destructive/80 font-bold mb-3 bg-destructive/[0.03] w-fit px-2 py-0.5 rounded border border-destructive/10">
                             <AlertCircle className="h-3 w-3" />
-                          <span>Lokasi belum terpetakan (Kecamatan/Kelurahan missing)</span>
+                          <span>{dict.wizard.location_missing}</span>
                         </div>
                         )}
                         
                         {isItemMismatch && (
                           <div className="flex items-center gap-1.5 text-[10px] text-amber-700 font-bold mb-2 bg-amber-50 dark:bg-amber-900/20 w-fit px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40">
                             <Sparkles className="h-3 w-3 text-amber-600" />
-                            <span>Kemungkinan barang terlewat ({order.items?.length}/{order.metadata?.potentialItemCount} ditemukan)</span>
+                            <span>{dict.intake.item_mismatch.replace('{found}', (order.items?.length || 0).toString()).replace('{total}', (order.metadata?.potentialItemCount || 0).toString())}</span>
                           </div>
                         )}
 
@@ -779,14 +771,14 @@ Pesanan:
                         {isMissingItems ? (
                           <div className="flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40">
                             <AlertCircle className="h-3 w-3 shrink-0" />
-                            <span>Daftar barang kosong</span>
+                            <span>{dict.wizard.items_empty}</span>
                           </div>
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {hasUnpricedItems && (
                               <div className="flex items-center gap-1 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 mb-0.5 w-full">
                                 <AlertCircle className="h-2.5 w-2.5" />
-                                Ada barang tanpa harga — lengkapi di edit
+                                {dict.intake.unpriced_item}
                               </div>
                             )}
                             {order.items?.map((item, i) => (
@@ -794,7 +786,7 @@ Pesanan:
                                 "text-[10px] font-normal py-0",
                                 item.unitPrice === 0 && "border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
                               )}>
-                                {item.qty}x {item.name}{item.unitPrice > 0 ? ` @${formatNumber(item.unitPrice)}` : ' (harga?)'}
+                                {item.qty}x {item.name}{item.unitPrice > 0 ? ` @${formatNumber(item.unitPrice)}` : ` ${dict.intake.price_query}`}
                               </Badge>
                             ))}
                           </div>
@@ -808,7 +800,7 @@ Pesanan:
                   <div className="flex items-center gap-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-foreground" />
                     <Label htmlFor="tag-paste" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                      Tag / Nama Event
+                      {dict.orders.tag_event}
                       <Popover>
                         <PopoverTrigger asChild>
                           <button type="button" className="opacity-40 hover:opacity-100 transition-opacity focus:outline-hidden">
@@ -817,7 +809,7 @@ Pesanan:
                         </PopoverTrigger>
                         <PopoverContent className="w-64 p-3" side="right" align="center">
                           <p className="text-xs text-muted-foreground leading-relaxed">
-                            Jika dikosongkan, pesanan akan otomatis diberi tag <span className="font-semibold text-foreground">"General"</span>.
+                            {dict.orders.tag_help}
                           </p>
                         </PopoverContent>
                       </Popover>
@@ -833,7 +825,7 @@ Pesanan:
 
                 <Button className="w-full font-bold h-10 rounded-md active:scale-[0.99] transition-all bg-foreground hover:bg-foreground/90 text-background" onClick={handleImport}>
                   <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Impor {parsedOrders.length} Pesanan
+                  {dict.intake.import_now} ({parsedOrders.length})
                 </Button>
               </div>
             </div>

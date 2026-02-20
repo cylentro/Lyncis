@@ -26,6 +26,7 @@ import {
     autoSaveLogistics,
     autoSaveSenderId
 } from '@/hooks/use-lyncis-db';
+import { useLanguage } from '@/components/providers/language-provider';
 import { JastipOrder, SenderAddress } from '@/lib/types';
 import { CompletionGate } from './completion-gate';
 import { LogisticsInput, OrderLogisticsForm } from './logistics-input';
@@ -54,6 +55,7 @@ export function BatchWizard({
     currentBatchId,
     onEditOrder
 }: BatchWizardProps) {
+    const { dict } = useLanguage();
     const orders = useStagedOrders();
     const senderAddresses = useSenderAddresses();
     
@@ -125,20 +127,20 @@ export function BatchWizard({
             const ids = orders?.map(o => o.id) || [];
             if (ids.length > 0) {
                 await unstageOrders(ids);
-                toast.success("Semua pesanan dikeluarkan dari batch");
+                toast.success(dict.toast.batch_all_removed);
             }
             onOpenChange(false);
         } else if (Array.isArray(removingOrder)) {
             if (removingOrder.length > 0) {
                 await unstageOrders(removingOrder);
-                toast.success(`${removingOrder.length} pesanan dikeluarkan dari batch`);
+                toast.success(dict.toast.batch_selected_removed.replace('{count}', removingOrder.length.toString()));
                 if (orders && orders.length === removingOrder.length) {
                     onOpenChange(false);
                 }
             }
         } else {
             await unstageOrders([removingOrder]);
-            toast.success("Pesanan dikeluarkan dari batch");
+            toast.success(dict.toast.batch_order_removed);
             if (orders?.length === 1) { // Was the last one
                 onOpenChange(false);
             }
@@ -192,12 +194,12 @@ export function BatchWizard({
 
             if (orderIds.length > 0) {
                 await commitBatch(orderIds, logisticsMap);
-                toast.success("Batch berhasil diproses!");
+                toast.success(dict.toast.batch_processed_success);
                 onOpenChange(false);
             }
         } catch (error) {
             console.error(error);
-            toast.error("Gagal memproses batch");
+            toast.error(dict.toast.batch_processed_error);
         }
     };
 
@@ -219,9 +221,9 @@ export function BatchWizard({
             >
                 <SheetHeader className="px-6 py-4 border-b shrink-0">
                     <SheetTitle className="flex items-center gap-2">
-                        <span>Fulfillment Wizard</span>
+                        <span>{dict.wizard.title}</span>
                         <span className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground opacity-40 ml-2">
-                            Step {STEP_ORDER.indexOf(currentStep) + 1} / 4
+                            {dict.wizard.step_of.replace('{current}', (STEP_ORDER.indexOf(currentStep) + 1).toString()).replace('{total}', '4')}
                         </span>
                     </SheetTitle>
                     <Progress value={progress} className="h-1 mt-2" />
@@ -279,32 +281,26 @@ export function BatchWizard({
             }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            {removingOrder === 'all' 
-                                ? 'Kosongkan Batch?' 
-                                : Array.isArray(removingOrder) 
-                                    ? `Hapus ${removingOrder.length} Pesanan?` 
-                                    : 'Hapus Pesanan?'}
-                        </AlertDialogTitle>
+                        <AlertDialogTitle>{dict.orders.delete_confirm_title}</AlertDialogTitle>
                         <AlertDialogDescription>
                             {removingOrder === 'all' 
-                                ? 'Seluruh pesanan dalam batch ini akan dikeluarkan dari antrean batch dan dikembalikan ke status "Bucket Baru". Tindakan ini tidak bisa dibatalkan.' 
+                                ? dict.orders.delete_confirm_description_all 
                                 : Array.isArray(removingOrder)
-                                    ? `${removingOrder.length} pesanan yang terpilih akan dikeluarkan dari batch dan dikembalikan ke status "Bucket Baru".`
-                                    : 'Pesanan ini akan dikeluarkan dari batch dan dikembalikan ke status "Bucket Baru".'}
+                                    ? dict.orders.delete_confirm_description_selected.replace('{count}', removingOrder.length.toString())
+                                    : dict.orders.delete_confirm_description_single}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogCancel>{dict.common.cancel}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmRemove}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             {removingOrder === 'all' 
-                                ? 'Kosongkan Batch' 
+                                ? dict.orders.delete_confirm_action_all 
                                 : Array.isArray(removingOrder) 
-                                    ? 'Keluarkan Terpilih' 
-                                    : 'Keluarkan dari Batch'}
+                                    ? dict.orders.delete_confirm_action_selected 
+                                    : dict.orders.delete_confirm_action_single}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

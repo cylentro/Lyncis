@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useLanguage } from '@/components/providers/language-provider';
 
 interface OriginSelectorProps {
     senderAddresses: SenderAddress[];
@@ -43,6 +44,7 @@ export function OriginSelector({
     onProceed,
     onBack,
 }: OriginSelectorProps) {
+    const { dict } = useLanguage();
     const [isAdding, setIsAdding] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     
@@ -67,38 +69,38 @@ export function OriginSelector({
 
     const handleSave = async () => {
         if (!formState.label || !formState.provinsi) {
-            toast.error("Label dan Provinsi wajib diisi");
+            toast.error(dict.toast.required_origin_fields);
             return;
         }
 
         try {
             if (editingId) {
                 await updateSenderAddress(editingId, formState);
-                toast.success("Alamat pengirim berhasil diperbarui");
+                toast.success(dict.toast.success_update_origin);
             } else {
                 const id = await addSenderAddress({
                     ...formState,
                     isDefault: senderAddresses.length === 0,
                 });
                 onSelect(id);
-                toast.success("Alamat pengirim berhasil disimpan");
+                toast.success(dict.toast.success_update_origin);
             }
             closeForm();
         } catch (error) {
             console.error(error);
-            toast.error("Gagal menyimpan alamat");
+            toast.error(dict.toast.error_save_origin);
         }
     };
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        if (!confirm("Hapus alamat ini?")) return;
+        if (!confirm(dict.toast.confirm_delete_origin)) return;
         try {
             await deleteSenderAddress(id);
             if (selectedId === id) onSelect('');
-            toast.success("Alamat dihapus");
+            toast.success(dict.toast.success_delete_origin);
         } catch (error) {
-            toast.error("Gagal menghapus alamat");
+            toast.error(dict.toast.error_delete_origin);
         }
     };
 
@@ -106,9 +108,9 @@ export function OriginSelector({
         e.stopPropagation();
         try {
             await setDefaultSenderAddress(id);
-            toast.success("Alamat default diperbarui");
+            toast.success(dict.toast.success_set_default_origin);
         } catch (error) {
-            toast.error("Gagal memperbarui alamat default");
+            toast.error(dict.toast.error_save_origin); // generic error
         }
     };
 
@@ -149,31 +151,31 @@ export function OriginSelector({
         return (
             <div className="flex flex-col flex-1 min-h-0 bg-background">
                 <div className="p-6 border-b">
-                    <h2 className="text-xl font-semibold">Tambah Alamat Pengirim</h2>
-                    <p className="text-sm text-muted-foreground">Masukkan detail alamat asal pengiriman.</p>
+                    <h2 className="text-xl font-semibold">{dict.wizard.add_origin}</h2>
+                    <p className="text-sm text-muted-foreground">{dict.wizard.origin_desc}</p>
                 </div>
 
                 <div className="flex-1 p-6 overflow-y-auto space-y-4">
                     <div className="space-y-2">
-                        <Label>Label Alamat</Label>
+                        <Label>{dict.wizard.label}</Label>
                         <Input 
                             value={formState.label}
                             onChange={(e) => setFormState(prev => ({ ...prev, label: e.target.value }))}
-                            placeholder="Contoh: Kantor Pusat, Gudang Jakarta"
+                            placeholder={dict.common.edit === 'Edit' ? 'Example: Head Office, Warehouse' : 'Contoh: Kantor Pusat, Gudang'}
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Nama Pengirim</Label>
+                            <Label>{dict.wizard.sender_name}</Label>
                             <Input 
                                 value={formState.name}
                                 onChange={(e) => setFormState(prev => ({ ...prev, name: e.target.value }))}
-                                placeholder="Nama Toko / Personal"
+                                placeholder={dict.common.edit === 'Edit' ? 'Shop Name / Personal' : 'Nama Toko / Personal'}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>No. Telepon</Label>
+                            <Label>{dict.wizard.phone}</Label>
                             <Input 
                                 value={formState.phone}
                                 onChange={(e) => setFormState(prev => ({ ...prev, phone: e.target.value }))}
@@ -183,16 +185,16 @@ export function OriginSelector({
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Alamat Lengkap</Label>
+                        <Label>{dict.orders.address}</Label>
                         <Textarea 
                             value={formState.addressRaw}
                             onChange={(e) => setFormState(prev => ({ ...prev, addressRaw: e.target.value }))}
-                            placeholder="Jalan, No. Rumah, RT/RW..."
+                            placeholder={dict.orders.address_placeholder}
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Cari Lokasi</Label>
+                        <Label>{dict.wizard.search_location}</Label>
                         <LocationAutocomplete 
                             onSelect={(loc) => setFormState(prev => ({
                                 ...prev,
@@ -210,24 +212,24 @@ export function OriginSelector({
                         <div className="p-3 rounded-md bg-muted/20 border border-border/40 animate-in fade-in slide-in-from-top-1">
                             <div className="grid grid-cols-2 gap-y-2 text-[11px]">
                                 <div className="flex flex-col">
-                                    <span className="text-muted-foreground uppercase font-bold text-[9px]">Provinsi</span>
+                                    <span className="text-muted-foreground uppercase font-bold text-[9px]">{dict.orders.province}</span>
                                     <span className="font-medium truncate">{formState.provinsi}</span>
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-muted-foreground uppercase font-bold text-[9px]">Kota/Kab</span>
+                                    <span className="text-muted-foreground uppercase font-bold text-[9px]">{dict.orders.city}</span>
                                     <span className="font-medium truncate">{formState.kota}</span>
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-muted-foreground uppercase font-bold text-[9px]">Kecamatan</span>
+                                    <span className="text-muted-foreground uppercase font-bold text-[9px]">{dict.orders.district}</span>
                                     <span className="font-medium truncate">{formState.kecamatan}</span>
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-muted-foreground uppercase font-bold text-[9px]">Kelurahan</span>
+                                    <span className="text-muted-foreground uppercase font-bold text-[9px]">{dict.orders.subdistrict}</span>
                                     <span className="font-medium truncate">{formState.kelurahan}</span>
                                 </div>
                             </div>
                             <div className="mt-2 pt-2 border-t border-border/20 flex items-baseline gap-1.5">
-                                <span className="text-muted-foreground uppercase font-bold text-[9px]">Kode Pos</span>
+                                <span className="text-muted-foreground uppercase font-bold text-[9px]">{dict.orders.postal_code}</span>
                                 <span className="font-mono font-bold text-primary">{formState.kodepos}</span>
                             </div>
                         </div>
@@ -236,10 +238,10 @@ export function OriginSelector({
 
                 <div className="p-4 border-t bg-background flex gap-3">
                     <Button variant="outline" className="flex-1" onClick={closeForm}>
-                        Batal
+                        {dict.common.cancel}
                     </Button>
                     <Button className="flex-1" onClick={handleSave}>
-                        {editingId ? 'Simpan Perubahan' : 'Simpan Alamat'}
+                        {editingId ? dict.wizard.edit_origin : dict.wizard.save_origin}
                     </Button>
                 </div>
             </div>
@@ -249,18 +251,18 @@ export function OriginSelector({
     return (
         <div className="flex flex-col flex-1 min-h-0 bg-background">
             <div className="p-6 border-b">
-                <h2 className="text-xl font-semibold">Pilih Alamat Pengirim</h2>
-                <p className="text-sm text-muted-foreground">Pilih lokasi asal pengiriman untuk menghitung ongkir.</p>
+                <h2 className="text-xl font-semibold">{dict.wizard.origin_title}</h2>
+                <p className="text-sm text-muted-foreground">{dict.wizard.origin_desc}</p>
             </div>
 
             <div className="flex-1 p-6 space-y-4 overflow-y-auto min-h-0 overscroll-contain">
                 {senderAddresses.length === 0 ? (
                     <div className="text-center py-10 text-muted-foreground space-y-4">
                         <MapPin className="h-12 w-12 mx-auto opacity-20" />
-                        <p>Belum ada alamat tersimpan.</p>
+                        <p>{dict.wizard.no_origin}</p>
                         <Button onClick={() => setIsAdding(true)}>
                             <Plus className="h-4 w-4 mr-2" />
-                            Tambah Alamat Baru
+                            {dict.wizard.add_origin}
                         </Button>
                     </div>
                 ) : (
@@ -322,7 +324,7 @@ export function OriginSelector({
                                                     <span className="font-bold text-sm truncate">{addr.label}</span>
                                                     {addr.isDefault && (
                                                         <Badge variant="secondary" className="h-3.5 px-1 text-[8px] uppercase font-black bg-primary/10 text-primary border-none">
-                                                            Default
+                                                            {dict.common.edit === 'Edit' ? 'Default' : 'Utama'}
                                                         </Badge>
                                                     )}
                                                 </div>
@@ -352,7 +354,7 @@ export function OriginSelector({
 
                         <Button variant="outline" className="w-full" onClick={() => setIsAdding(true)}>
                             <Plus className="h-4 w-4 mr-2" />
-                            Tambah Alamat Lain
+                            {dict.wizard.add_origin}
                         </Button>
                     </>
                 )}
@@ -360,14 +362,14 @@ export function OriginSelector({
 
             <div className="p-4 border-t bg-background flex gap-3">
                 <Button variant="outline" className="flex-1" onClick={onBack}>
-                    Kembali
+                    {dict.wizard.back}
                 </Button>
                 <Button 
                     className="flex-[2]" 
                     disabled={!selectedId}
                     onClick={onProceed}
                 >
-                    Lanjutkan
+                    {dict.wizard.continue}
                 </Button>
             </div>
         </div>

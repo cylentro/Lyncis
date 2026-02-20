@@ -21,6 +21,7 @@ import { updateUnitPrice, updateTotalPrice, updateQuantity } from '@/lib/pricing
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { OrderFormContent } from './order-form-content';
+import { useLanguage } from '@/components/providers/language-provider';
 
 interface OrderEditSheetProps {
   order: JastipOrder | null;
@@ -55,6 +56,7 @@ export function OrderEditSheet({
   readOnly = false,
   mode = 'edit',
 }: OrderEditSheetProps) {
+  const { dict } = useLanguage();
   const [formData, setFormData] = useState<JastipOrder | null>(null);
 
   // Sync form data when sheet opens or order changes
@@ -146,7 +148,7 @@ export function OrderEditSheet({
              </div>
              <div>
                 <SheetTitle className="text-base font-bold tracking-tight">
-                  {readOnly ? 'Detail Pesanan' : 'Edit Pesanan'}
+                  {readOnly ? dict.orders.order_detail : dict.orders.order_edit}
                 </SheetTitle>
                 <div className="flex items-center gap-2 mt-0.5">
                    <Badge 
@@ -158,7 +160,7 @@ export function OrderEditSheet({
                          : formData.status === 'unassigned' ? "bg-muted/50 text-muted-foreground" : "bg-blue-50 text-blue-700"
                      )}
                    >
-                      {formData.metadata?.needsTriage ? 'Perlu Review' : formData.status === 'unassigned' ? 'Bucket Baru' : 'Siap Kirim'}
+                      {formData.metadata?.needsTriage ? dict.orders.needs_review : formData.status === 'unassigned' ? dict.status.unassigned : dict.status.staged}
                    </Badge>
                    <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider opacity-50">
                       ID: {formData.id.slice(0, 8)}
@@ -191,7 +193,7 @@ export function OrderEditSheet({
         {!readOnly && (
           <div className="shrink-0 p-6 border-t bg-background shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-40">
              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 h-11 font-bold rounded-lg border-border/80 hover:bg-muted/50 transition-all">Batal</Button>
+                <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 h-11 font-bold rounded-lg border-border/80 hover:bg-muted/50 transition-all">{dict.common.cancel}</Button>
                 {mode === 'review' ? (
                   <Button 
                     onClick={async () => {
@@ -208,10 +210,10 @@ export function OrderEditSheet({
                     }} 
                     className="flex-[2] h-11 font-bold bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-500/20 rounded-md transition-all active:scale-98"
                   >
-                    Verifikasi & Simpan
+                    {dict.orders.verify_save}
                   </Button>
                 ) : (
-                  <Button onClick={handleSave} className="flex-[2] h-11 font-bold bg-black hover:bg-black/90 text-white rounded-md transition-all active:scale-98">Simpan</Button>
+                  <Button onClick={handleSave} className="flex-[2] h-11 font-bold bg-black hover:bg-black/90 text-white rounded-md transition-all active:scale-98">{dict.common.save}</Button>
                 )}
              </div>
           </div>

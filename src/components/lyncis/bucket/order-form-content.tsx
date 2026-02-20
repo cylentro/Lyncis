@@ -36,6 +36,7 @@ import {
 import { TagAutocomplete } from '@/components/lyncis/intake/tag-autocomplete';
 import { LocationAutocomplete } from '@/components/lyncis/intake/location-autocomplete';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/components/providers/language-provider';
 
 // ─── Props ──────────────────────────────────────────────────
 
@@ -54,8 +55,9 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
   activeTags = [],
   readOnly = false,
 }: OrderFormContentProps<T>) {
+  const { dict } = useLanguage();
 
-  // ─── Handlers ──────────────────────────────────────────────
+  // ─── Handlers ───
 
   const updateRecipient = (field: string, value: string) => {
     setFormData((prev) => ({
@@ -149,7 +151,7 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
           <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
             <TagIcon className="h-4 w-4" />
           </div>
-          <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Tag / Nama Event</Label>
+          <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{dict.orders.tag_event}</Label>
           {!readOnly && (
             <Popover>
               <PopoverTrigger asChild>
@@ -157,17 +159,16 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
                   <Info className="h-3.5 w-3.5" />
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-64 p-3" side="right" align="center">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Tag membantu Anda mengelompokkan pesanan berdasarkan batch pengiriman atau event. 
-                  Jika dikosongkan, akan diset ke <span className="font-semibold text-foreground">"General"</span>.
-                </p>
-              </PopoverContent>
+               <PopoverContent className="w-64 p-3" side="right" align="center">
+                 <p className="text-xs text-muted-foreground leading-relaxed">
+                   {dict.orders.tag_help}
+                 </p>
+               </PopoverContent>
             </Popover>
           )}
         </div>
-        {readOnly ? (
-            <div className="px-1 text-sm font-black text-primary uppercase tracking-wider">{formData.tag || 'General'}</div>
+         {readOnly ? (
+             <div className="px-1 text-sm font-black text-primary uppercase tracking-wider">{formData.tag || dict.common.general}</div>
         ) : (
             <TagAutocomplete
               id="manual-tag-autocomplete"
@@ -183,58 +184,58 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
       {/* ── Section: Recipient ── */}
       <div className="space-y-6">
         <div className="flex items-center gap-2.5 px-1">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <MapPin className="h-4 w-4" />
           </div>
-          <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Informasi Penerima</span>
+          <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{dict.orders.recipient_info}</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/20 p-5 rounded-2xl border border-border/50">
+         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/20 p-5 rounded-2xl border border-border/50">
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Nama Lengkap</Label>
+            <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{dict.orders.full_name}</Label>
             {readOnly ? (
                <div className="text-sm font-black px-1">{formData.recipient.name || '—'}</div>
             ) : (
-                <Input
-                  value={formData.recipient.name}
-                  onChange={(e) => updateRecipient('name', e.target.value)}
-                  placeholder="Contoh: John Doe"
-                  className="h-10 bg-background border-muted-foreground/20 rounded-xl"
-                />
+                 <Input
+                   value={formData.recipient.name}
+                   onChange={(e) => updateRecipient('name', e.target.value)}
+                   placeholder={dict.orders.full_name}
+                   className="h-10 bg-background border-muted-foreground/20 rounded-xl"
+                 />
             )}
-          </div>
+           </div>
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">No. WhatsApp</Label>
+            <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{dict.orders.phone_number}</Label>
             {readOnly ? (
                 <div className="text-sm font-bold font-mono px-1">{formData.recipient.phone || '—'}</div>
             ) : (
-                <Input
-                  value={formData.recipient.phone}
-                  onChange={(e) => updateRecipient('phone', e.target.value)}
-                  placeholder="081234567890"
-                  className="h-10 bg-background border-muted-foreground/20 rounded-xl"
-                />
+                 <Input
+                   value={formData.recipient.phone}
+                   onChange={(e) => updateRecipient('phone', e.target.value)}
+                   placeholder="081234567890"
+                   className="h-10 bg-background border-muted-foreground/20 rounded-xl"
+                 />
             )}
           </div>
-
-          <div className="sm:col-span-2 space-y-1.5">
-            <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Alamat (Jalan, No. Rumah, RT/RW)</Label>
+ 
+           <div className="sm:col-span-2 space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{dict.orders.address_detail}</Label>
             {readOnly ? (
                 <div className="text-sm font-medium italic opacity-80 px-1 leading-relaxed">{formData.recipient.addressRaw || '—'}</div>
             ) : (
-                <Textarea
-                  value={formData.recipient.addressRaw}
-                  onChange={(e) => updateRecipient('addressRaw', e.target.value)}
-                  placeholder="Tulis detail alamat pengiriman..."
-                  rows={2}
-                  className="bg-background border-muted-foreground/20 rounded-xl text-sm resize-none"
-                />
+                 <Textarea
+                   value={formData.recipient.addressRaw}
+                   onChange={(e) => updateRecipient('addressRaw', e.target.value)}
+                   placeholder={dict.orders.address_placeholder}
+                   rows={2}
+                   className="bg-background border-muted-foreground/20 rounded-xl text-sm resize-none"
+                 />
             )}
           </div>
-
-          {!readOnly && (
-              <div className="sm:col-span-2 space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Cari Kelurahan / Area / Kode Pos</Label>
+ 
+           {!readOnly && (
+               <div className="sm:col-span-2 space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{dict.orders.search_location}</Label>
                 <LocationAutocomplete
                   onSelect={(loc) => {
                     setFormData((prev) => ({
@@ -256,24 +257,24 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
 
           {formData.recipient.provinsi && (
             <div className="sm:col-span-2 p-4 rounded-xl bg-background/50 border border-border/50 animate-in fade-in slide-in-from-top-2">
-              <div className="grid grid-cols-2 gap-y-3 text-[11px]">
-                <div className="flex flex-col">
-                  <span className="text-muted-foreground uppercase font-black text-[9px]">Provinsi</span>
-                  <span className="font-bold">{formData.recipient.provinsi}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-muted-foreground uppercase font-black text-[9px]">Kota/Kabupaten</span>
-                  <span className="font-bold">{formData.recipient.kota}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-muted-foreground uppercase font-black text-[9px]">Kecamatan</span>
-                  <span className="font-bold">{formData.recipient.kecamatan}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-muted-foreground uppercase font-black text-[9px]">Kelurahan</span>
-                  <span className="font-bold">{formData.recipient.kelurahan}</span>
-                </div>
-              </div>
+               <div className="grid grid-cols-2 gap-y-3 text-[11px]">
+                 <div className="flex flex-col">
+                   <span className="text-muted-foreground uppercase font-black text-[9px]">{dict.orders.province}</span>
+                   <span className="font-bold">{formData.recipient.provinsi}</span>
+                 </div>
+                 <div className="flex flex-col">
+                   <span className="text-muted-foreground uppercase font-black text-[9px]">{dict.orders.city}</span>
+                   <span className="font-bold">{formData.recipient.kota}</span>
+                 </div>
+                 <div className="flex flex-col">
+                   <span className="text-muted-foreground uppercase font-black text-[9px]">{dict.orders.district}</span>
+                   <span className="font-bold">{formData.recipient.kecamatan}</span>
+                 </div>
+                 <div className="flex flex-col">
+                   <span className="text-muted-foreground uppercase font-black text-[9px]">{dict.orders.subdistrict}</span>
+                   <span className="font-bold">{formData.recipient.kelurahan}</span>
+                 </div>
+               </div>
               <div className="mt-3 pt-3 border-t border-border/20 flex items-center gap-2">
                 <Badge variant="outline" className="font-mono font-black text-primary bg-primary/5 border-primary/20">
                   {formData.recipient.kodepos}
@@ -290,14 +291,14 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
       <div className="space-y-6">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Package className="h-4 w-4" />
-            </div>
-            <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Daftar Barang</span>
-          </div>
-          <Badge variant="secondary" className="font-black text-[10px] px-2 h-5 bg-primary/5 text-primary border-primary/10 tracking-widest">
-            {formData.items.length} ITEM
-          </Badge>
+             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+               <Package className="h-4 w-4" />
+             </div>
+             <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{dict.orders.item_list}</span>
+           </div>
+           <Badge variant="secondary" className="font-black text-[10px] px-2 h-5 bg-primary/5 text-primary border-primary/10 tracking-widest">
+             {formData.items.length} {formData.items.length === 1 ? dict.common.items_count.split(' ')[1].toUpperCase() : dict.common.items_count_plural.split(' ')[1].toUpperCase()}
+           </Badge>
         </div>
 
         <div className="space-y-4">
@@ -321,25 +322,25 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
                     </Button>
                   </div>
               )}
-
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Nama Barang</Label>
-                  {readOnly ? (
+ 
+               <div className="space-y-4">
+                 <div>
+                   <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">{dict.orders.item_name}</Label>
+                   {readOnly ? (
                       <div className="text-sm font-black px-1 mt-1">{item.name}</div>
                   ) : (
                       <Input
                         value={item.name}
                         onChange={(e) => updateItem(index, { ...item, name: e.target.value })}
-                        placeholder="Contoh: Starbucks Tumbler"
+                        placeholder={dict.common.edit === 'Edit' ? 'Example: Starbucks Tumbler' : 'Contoh: Starbucks Tumbler'}
                         className="h-10 bg-background border-muted-foreground/20 rounded-xl font-medium mt-1"
                       />
                   )}
                 </div>
 
-                <div className="grid grid-cols-4 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-[9px] uppercase font-black text-muted-foreground text-center block">Qty</Label>
+                 <div className="grid grid-cols-4 gap-3">
+                   <div className="space-y-1">
+                     <Label className="text-[9px] uppercase font-black text-muted-foreground text-center block">Qty</Label>
                     {readOnly ? (
                         <div className="text-xs font-black text-center mt-1">x{item.qty}</div>
                     ) : (
@@ -351,8 +352,8 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
                         />
                     )}
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-[9px] uppercase font-black text-muted-foreground text-center block">Harga</Label>
+                   <div className="space-y-1">
+                     <Label className="text-[9px] uppercase font-black text-muted-foreground text-center block">{dict.common.edit === 'Edit' ? 'Price' : 'Harga'}</Label>
                     {readOnly ? (
                         <div className="text-xs font-bold text-center mt-1">{item.unitPrice.toLocaleString('id-ID')}</div>
                     ) : (
@@ -377,8 +378,8 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
                         />
                     )}
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-[9px] uppercase font-black text-muted-foreground text-center block">Berat (kg)</Label>
+                   <div className="space-y-1">
+                     <Label className="text-[9px] uppercase font-black text-muted-foreground text-center block">{dict.wizard.weight} (kg)</Label>
                     {readOnly ? (
                         <div className="text-xs font-bold text-center mt-1">{item.rawWeightKg}kg</div>
                     ) : (
@@ -403,11 +404,11 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
                 className="w-full border-2 border-dashed border-muted-foreground/10 rounded-2xl py-10 transition-all hover:bg-primary/5 hover:border-primary/40 group active:scale-[0.99]"
               >
                 <div className="flex flex-col items-center gap-2">
-                  <div className="h-10 w-10 rounded-full bg-muted/40 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                    <Plus className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground group-hover:text-primary transition-colors">Tambah Barang</span>
-                </div>
+                   <div className="h-10 w-10 rounded-full bg-muted/40 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                     <Plus className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                   </div>
+                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground group-hover:text-primary transition-colors">{dict.orders.add_item}</span>
+                 </div>
               </Button>
           )}
         </div>

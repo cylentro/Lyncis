@@ -1,22 +1,24 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
 import { JastipOrder, SenderAddress } from '@/lib/types';
+import { useLanguage } from '@/components/providers/language-provider';
 import { OrderLogisticsForm } from './logistics-input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogDescription, 
-    DialogFooter, 
-    DialogHeader, 
-    DialogTitle, 
-    DialogTrigger 
-} from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Package, MapPin, Truck, Scale, ShoppingBag } from 'lucide-react';
 import { SERVICE_LABELS } from '@/lib/shipping-zones';
 import { cn } from '@/lib/utils';
@@ -40,7 +42,8 @@ export function BatchSummary({
     onEditOrder,
     onBack,
 }: BatchSummaryProps) {
-    const [confirmOpen, setConfirmOpen] = useState(false);
+    const { dict } = useLanguage();
+    const [isConfirming, setIsConfirming] = useState(false);
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
     const toggleExpand = (id: string) => {
@@ -66,9 +69,9 @@ export function BatchSummary({
             <div className="p-4 border-b bg-muted/20">
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold">Ringkasan Pengiriman</h2>
+                        <h2 className="text-lg font-bold">{dict.wizard.summary_title}</h2>
                         <Badge variant="default" className="h-5 px-2 text-[9px] font-black uppercase tracking-widest bg-green-600 hover:bg-green-700">
-                            Siap Proses
+                            {dict.wizard.ready_to_process}
                         </Badge>
                     </div>
                 </div>
@@ -78,13 +81,13 @@ export function BatchSummary({
                     <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
                         <MapPin className="h-4 w-4" />
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
                             <span className="font-bold text-xs truncate">{senderAddress?.label}</span>
                             <span className="text-[10px] font-bold text-foreground/60">{senderAddress?.name} • {senderAddress?.phone}</span>
                         </div>
-                        
+
                         <div className="flex flex-col">
                             <p className="text-[10px] text-muted-foreground line-clamp-1 leading-tight">
                                 {senderAddress?.addressRaw}
@@ -95,18 +98,18 @@ export function BatchSummary({
                         </div>
                     </div>
                 </div>
-                
+
                 <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="bg-background border rounded-lg p-2">
-                        <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">Pesanan</div>
+                        <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">{dict.common.edit === 'Edit' ? 'Orders' : 'Pesanan'}</div>
                         <div className="font-bold text-sm leading-tight">{orders.length}</div>
                     </div>
                     <div className="bg-background border rounded-lg p-2">
-                        <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">Berat</div>
+                        <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">{dict.wizard.weight}</div>
                         <div className="font-bold text-sm leading-tight">{formatWeight(totalWeight)}</div>
                     </div>
                     <div className="bg-background border rounded-lg p-2 border-green-600 dark:border-green-400">
-                        <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">Ongkir</div>
+                        <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">{dict.wizard.est_shipping}</div>
                         <div className="font-bold text-sm leading-tight text-green-600 dark:text-green-400">
                             {formatCurrency(totalCost)}
                         </div>
@@ -124,7 +127,7 @@ export function BatchSummary({
 
                         return (
                             <div key={order.id} className="group flex flex-col border rounded-xl bg-card hover:border-primary/30 transition-all overflow-hidden">
-                                <div 
+                                <div
                                     className="p-4 flex flex-col gap-3 cursor-pointer"
                                     onClick={() => toggleExpand(order.id)}
                                 >
@@ -187,12 +190,12 @@ export function BatchSummary({
                                             <div className="p-4 space-y-5">
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-1">
-                                                        <span className="text-muted-foreground font-bold uppercase tracking-tight text-[10px]">DIMENSI</span>
+                                                        <span className="text-muted-foreground font-bold uppercase tracking-tight text-[10px]">{dict.common.dimensions}</span>
                                                         <p className="font-bold text-xs">{form.l} x {form.w} x {form.h} cm</p>
                                                         <p className="text-[10px] text-muted-foreground italic">Volumetric: {form.volumetric} kg</p>
                                                     </div>
                                                     <div className="space-y-1 text-right">
-                                                        <span className="text-muted-foreground font-bold uppercase tracking-tight text-[10px]">LOGISTIK</span>
+                                                        <span className="text-muted-foreground font-bold uppercase tracking-tight text-[10px]">{dict.common.logistics}</span>
                                                         <p className="font-bold text-xs">Berat: {formatWeight(form.weight)}</p>
                                                         <p className="text-[10px] text-primary font-black uppercase">Chargeable: {formatWeight(form.chargeable)}</p>
                                                     </div>
@@ -202,7 +205,7 @@ export function BatchSummary({
                                                 <div className="space-y-2">
                                                     <div className="flex items-center gap-2">
                                                         <ShoppingBag className="h-3 w-3 text-muted-foreground" />
-                                                        <span className="text-muted-foreground font-bold uppercase tracking-widest text-[9px]">DAFTAR BARANG</span>
+                                                        <span className="text-muted-foreground font-bold uppercase tracking-widest text-[9px]">{dict.common.item_list}</span>
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {order.items.map((item, idx) => (
@@ -225,9 +228,9 @@ export function BatchSummary({
 
                                                 {/* Metadata Below */}
                                                 <div className="border-t border-border/20 pt-3">
-                                                    <span className="text-muted-foreground font-bold uppercase tracking-tight text-[10px]">METADATA</span>
+                                                    <span className="text-muted-foreground font-bold uppercase tracking-tight text-[10px]">{dict.wizard.metadata}</span>
                                                     <p className="text-[10px] italic text-muted-foreground mt-0.5">
-                                                        Source: <span className="font-bold text-foreground/50">{order.metadata?.sourceFileName || "Manual Input"}</span>
+                                                        {dict.wizard.source}: <span className="font-bold text-foreground/50">{order.metadata?.sourceFileName || (dict.common.edit === 'Edit' ? 'Manual Input' : 'Input Manual')}</span>
                                                     </p>
                                                 </div>
                                             </div>
@@ -243,39 +246,37 @@ export function BatchSummary({
             {/* Footer */}
             <div className="p-4 border-t bg-background flex gap-3">
                 <Button variant="outline" className="flex-1" onClick={onBack}>
-                    Kembali
+                    {dict.wizard.back}
                 </Button>
-                
-                <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-                    <DialogTrigger asChild>
+
+                <AlertDialog open={isConfirming} onOpenChange={setIsConfirming}>
+                    <AlertDialogTrigger asChild>
                         <Button className="flex-[2] bg-green-600 hover:bg-green-700 text-white">
                             <Truck className="h-4 w-4 mr-2" />
-                            Buat Pengiriman
+                            {dict.wizard.create_shipping}
                         </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Konfirmasi Pengiriman</DialogTitle>
-                            <DialogDescription>
-                                Anda akan memproses <strong>{orders.length} pesanan</strong> dengan total ongkir <strong>{formatCurrency(totalCost)}</strong>.
-                                <br/><br/>
-                                Status pesanan akan berubah menjadi <span className="text-green-600 font-medium">Processed</span> dan masuk ke riwayat pengiriman.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setConfirmOpen(false)}>Batal</Button>
-                            <Button 
-                                className="bg-green-600 hover:bg-green-700 text-white" 
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{dict.wizard.confirm_title}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {dict.wizard.confirm_desc.replace('{count}', orders.length.toString()).replace('{total}', formatCurrency(totalCost))}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setIsConfirming(false)}>{dict.common.cancel}</AlertDialogCancel>
+                            <AlertDialogAction
+                                className="bg-green-600 hover:bg-green-700 text-white"
                                 onClick={() => {
-                                    setConfirmOpen(false);
+                                    setIsConfirming(false);
                                     onConfirm();
                                 }}
                             >
-                                Ya, Proses Sekarang
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                                {dict.wizard.confirm_action}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </div>
     );

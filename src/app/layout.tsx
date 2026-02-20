@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +21,18 @@ export const metadata: Metadata = {
   title: "Lyncis — Data Cleaning House",
   description:
     "Staging & orchestration layer untuk Jastiper. Transform data WhatsApp & Excel menjadi batch pengiriman.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Lyncis",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
 };
 
 export default async function RootLayout({

@@ -332,12 +332,12 @@ export function OrderTable({
                         <span className="font-mono text-[11px] font-black leading-none translate-y-[0.5px]">{order.items.length}</span>
                       </div>
                       <span className="text-[9px] font-black text-muted-foreground opacity-70 leading-none tracking-widest uppercase">
-                        {order.items.reduce((sum, item) => sum + (item.qty || 1), 0)} Pcs
+                        {order.items.reduce((sum, item) => sum + (item.qty || 1), 0)} {dict.common.pcs}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm font-black pr-8 text-foreground/80">
-                    {formatCurrency(getOrderTotal(order))}
+                    {formatCurrency(getOrderTotal(order), dict.common.edit === 'Edit' ? 'en-US' : 'id-ID')}
                   </TableCell>
                   <TableCell>
                     <StatusBadge order={order} />
@@ -412,7 +412,7 @@ export function OrderTable({
       <div className="sticky bottom-0 z-30 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t bg-background/95 backdrop-blur-md shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
         <div className="flex items-center gap-4">
             <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 px-3 py-1.5 bg-muted/30 rounded-lg">
-                <span className="text-foreground">{filteredOrders.length}</span> {dict.orders.count.split(' ')[1]}
+                <span className="text-foreground">{filteredOrders.length}</span> {filteredOrders.length === 1 ? dict.common.items_count.split(' ')[1] : dict.common.items_count_plural.split(' ')[1]}
             </div>
             
             <div className="flex items-center gap-2">

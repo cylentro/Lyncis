@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, CheckCircle2, AlertCircle, Pencil, Trash2, ShoppingBag, MapPin, AlertTriangle, Phone, FileText, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '@/components/providers/language-provider';
 
 interface CompletionGateProps {
     orders: JastipOrder[];
@@ -29,6 +30,7 @@ export function CompletionGate({
     onRemoveSelected,
     onEditOrder,
 }: CompletionGateProps) {
+    const { dict } = useLanguage();
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -80,14 +82,14 @@ export function CompletionGate({
                             onCheckedChange={handleSelectAll} 
                             className="h-5 w-5 rounded-md data-[state=checked]:bg-primary"
                         />
-                        Validasi Kelengkapan
+                        {dict.wizard.validate_title}
                         <Badge variant={allComplete ? 'default' : 'secondary'} className="text-sm">
-                            {completeCount} / {orders.length} Lengkap
+                            {completeCount} / {orders.length} {dict.wizard.ready}
                         </Badge>
                     </h2>
                     {selectedIds.size > 0 ? (
                         <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-muted-foreground mr-2">{selectedIds.size} Terpilih</span>
+                            <span className="text-sm font-bold text-muted-foreground mr-2">{dict.orders.selected_count.replace('{count}', selectedIds.size.toString())}</span>
                             <Button 
                                 variant="destructive" 
                                 size="sm" 
@@ -98,7 +100,7 @@ export function CompletionGate({
                                 className="h-8 gap-1.5 px-3 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all font-bold"
                             >
                                 <Trash2 className="h-3.5 w-3.5" />
-                                Hapus Terpilih
+                                {dict.wizard.remove_selected}
                             </Button>
                         </div>
                     ) : (
@@ -109,12 +111,12 @@ export function CompletionGate({
                             className="h-8 gap-1.5 px-3 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all font-bold"
                         >
                             <Trash2 className="h-3.5 w-3.5" />
-                            Kosongkan Batch
+                            {dict.wizard.empty_batch}
                         </Button>
                     )}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    Periksa data penerima dan barang sebelum lanjut ke logistik.
+                    {dict.wizard.validate_desc}
                 </p>
             </div>
 
@@ -152,7 +154,7 @@ export function CompletionGate({
                                                     e.stopPropagation();
                                                     onEditOrder(order.id);
                                                 }}
-                                                title="Edit Pesanan"
+                                                title={dict.common.edit}
                                             >
                                                 <Pencil className="h-4 w-4" />
                                             </Button>
@@ -164,7 +166,7 @@ export function CompletionGate({
                                                     e.stopPropagation();
                                                     onRemoveOrder(order.id);
                                                 }}
-                                                title="Hapus dari Batch"
+                                                title={dict.common.delete}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -192,13 +194,13 @@ export function CompletionGate({
                                                         ) : (
                                                             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 animate-pulse shrink-0">
                                                                 <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400" />
-                                                                <span className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-tighter">Review Diperlukan</span>
+                                                                <span className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-tighter">{dict.wizard.not_ready}</span>
                                                             </div>
                                                         )}
                                                         {!order.recipient.name ? (
                                                             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 shrink-0">
                                                                 <User className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                                                                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tighter">Nama Kosong</span>
+                                                                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tighter">{dict.orders.empty_name}</span>
                                                             </div>
                                                         ) : (
                                                             <h3 className="font-bold text-base text-foreground truncate pr-16 group-hover:pr-24 transition-all">
@@ -220,7 +222,7 @@ export function CompletionGate({
                                                     {!order.recipient.phone ? (
                                                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40 w-fit">
                                                             <Phone className="h-3 w-3 shrink-0" />
-                                                            Nomor HP belum diisi
+                                                            {dict.wizard.phone_missing}
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-center gap-1.5 text-xs font-bold text-foreground/70">
@@ -235,7 +237,7 @@ export function CompletionGate({
                                                         {!order.recipient.addressRaw ? (
                                                             <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40 w-fit">
                                                                 <FileText className="h-3 w-3 shrink-0" />
-                                                                Alamat lengkap belum diisi
+                                                                {dict.wizard.address_missing}
                                                             </div>
                                                         ) : (
                                                             <div className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
@@ -247,7 +249,7 @@ export function CompletionGate({
                                                         {(!order.recipient.kelurahan || !order.recipient.kodepos) ? (
                                                             <div className="flex items-center gap-1.5 text-[10px] text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-900/20 w-fit px-2 py-1 rounded border border-red-200 dark:border-red-900/40">
                                                                 <MapPin className="h-3 w-3 shrink-0" />
-                                                                Lokasi & Kode Pos Belum Terpetakan
+                                                                {dict.wizard.location_missing}
                                                             </div>
                                                         ) : (
                                                             <div className="flex items-center gap-1.5 text-[10px] text-primary/80 font-medium bg-primary/[0.03] w-fit px-2 py-0.5 rounded border border-primary/10">
@@ -263,7 +265,7 @@ export function CompletionGate({
                                                     {(!order.items || order.items.length === 0) ? (
                                                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40 w-fit">
                                                             <ShoppingBag className="h-3 w-3 shrink-0" />
-                                                            Daftar barang kosong
+                                                            {dict.wizard.items_empty}
                                                         </div>
                                                     ) : (
                                                         <div className="flex flex-wrap gap-1 items-center">
@@ -276,11 +278,11 @@ export function CompletionGate({
                                                                 </span>
                                                             ))}
                                                             {order.items.length > 3 && (
-                                                                <span className="text-[9px] text-muted-foreground font-bold px-1">+ {order.items.length - 3} lainnya</span>
+                                                                <span className="text-[9px] text-muted-foreground font-bold px-1">+ {order.items.length - 3} {dict.common.edit === 'Edit' ? 'others' : 'lainnya'}</span>
                                                             )}
                                                             {!isExpanded && (
                                                                 <span className="text-[9px] opacity-20 font-medium ml-auto">
-                                                                    Klik detail
+                                                                    {dict.common.edit === 'Edit' ? 'Click detail' : 'Klik detail'}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -298,8 +300,8 @@ export function CompletionGate({
                                                             <div className="mt-4 pt-3 border-t border-border/50">
                                                                 <div className="space-y-2">
                                                                     <div className="flex items-center justify-between">
-                                                                        <span className="text-muted-foreground font-bold uppercase tracking-tight text-[9px]">DAFTAR BARANG LENGKAP</span>
-                                                                        <span className="text-[10px] text-muted-foreground font-bold">{order.items.length} Item</span>
+                                                                        <span className="text-muted-foreground font-bold uppercase tracking-tight text-[9px]">{dict.orders.item_list}</span>
+                                                                        <span className="text-[10px] text-muted-foreground font-bold">{order.items.length} {order.items.length > 1 ? 'Items' : 'Item'}</span>
                                                                     </div>
                                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                                                                         {order.items.map((item, idx) => (
@@ -317,12 +319,12 @@ export function CompletionGate({
 
                                                                 <div className="pt-3 mt-3 border-t border-dashed border-border/30 flex items-center justify-between">
                                                                     <div className="flex flex-col">
-                                                                        <span className="text-muted-foreground font-bold uppercase tracking-tight text-[9px]">METADATA</span>
+                                                                        <span className="text-muted-foreground font-bold uppercase tracking-tight text-[9px]">{dict.wizard.metadata}</span>
                                                                         <span className="text-[10px] italic text-muted-foreground">
-                                                                            Source: <span className="font-semibold text-foreground/70">{order.metadata?.sourceFileName || "Manual Input"}</span>
+                                                                            {dict.wizard.source}: <span className="font-semibold text-foreground/70">{order.metadata?.sourceFileName || (dict.common.edit === 'Edit' ? 'Manual Input' : 'Input Manual')}</span>
                                                                         </span>
                                                                     </div>
-                                                                    {isComplete && <Badge className="bg-green-500/10 text-green-600 border-green-500/20 h-5 text-[9px]">VALIDATED</Badge>}
+                                                                    {isComplete && <Badge className="bg-green-500/10 text-green-600 border-green-500/20 h-5 text-[9px]">{dict.wizard.validated}</Badge>}
                                                                 </div>
                                                             </div>
                                                         </motion.div>
@@ -346,7 +348,7 @@ export function CompletionGate({
                     disabled={!allComplete}
                     onClick={onProceed}
                 >
-                    Lanjutkan ({completeCount}/{orders.length} Siap)
+                    {dict.wizard.continue_with.replace('{count}', completeCount.toString()).replace('{total}', orders.length.toString())}
                 </Button>
             </div>
         </div>

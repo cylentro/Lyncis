@@ -13,6 +13,7 @@ import { TARGET_FIELDS, saveMappingForHash, loadSavedMapping } from '@/lib/heade
 import { Button } from '@/components/ui/button';
 import { Info, User, Package, Tag, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/components/providers/language-provider';
 
 interface ColumnMappingViewProps {
   headers: string[];
@@ -29,6 +30,7 @@ export function ColumnMappingView({
   onConfirm,
   onCancel,
 }: ColumnMappingViewProps) {
+  const { dict } = useLanguage();
   const [mapping, setMapping] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -60,12 +62,12 @@ export function ColumnMappingView({
 
   const groups = [
     {
-      title: 'Informasi Penerima',
+      title: dict.orders.recipient_info,
       icon: User,
       fields: TARGET_FIELDS.filter((f) => f.key.startsWith('recipient.')),
     },
     {
-      title: 'Informasi Barang',
+      title: dict.orders.item_list,
       icon: Package,
       fields: TARGET_FIELDS.filter((f) => f.key.startsWith('items[0].')),
     },
@@ -84,8 +86,8 @@ export function ColumnMappingView({
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h3 className="text-sm font-bold">Pemetaan Kolom</h3>
-          <p className="text-[10px] text-muted-foreground">Hubungkan kolom Excel ke data Lyncis</p>
+          <h3 className="text-sm font-bold">{dict.intake.mapping_title}</h3>
+          <p className="text-[10px] text-muted-foreground">{dict.intake.mapping_desc}</p>
         </div>
       </div>
 
@@ -103,7 +105,16 @@ export function ColumnMappingView({
               {group.fields.map((field) => (
                 <div key={field.key} className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-medium ml-1">{field.label}</Label>
+                    <Label className="text-xs font-medium ml-1">
+                      {field.key === 'recipient.name' && dict.intake.mapping_recipient_name}
+                      {field.key === 'recipient.phone' && dict.intake.mapping_recipient_phone}
+                      {field.key === 'recipient.addressRaw' && dict.intake.mapping_recipient_address}
+                      {field.key === 'items[0].name' && dict.intake.mapping_item_name}
+                      {field.key === 'items[0].qty' && dict.intake.mapping_item_qty}
+                      {field.key === 'items[0].unitPrice' && dict.intake.mapping_item_price}
+                      {field.key === 'items[0].totalPrice' && dict.intake.mapping_item_total}
+                      {field.key === 'tag' && dict.intake.mapping_tag}
+                    </Label>
                     {mapping[field.key] && (
                       <CheckCircle2 className="h-3 w-3 text-green-500 animate-in zoom-in" />
                     )}
@@ -115,10 +126,10 @@ export function ColumnMappingView({
                     }
                   >
                     <SelectTrigger className="w-full h-9 bg-background border-muted-foreground/20 focus:ring-1">
-                      <SelectValue placeholder="Pilih kolom..." />
+                      <SelectValue placeholder={dict.intake.select_header} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none" className="text-xs">Pilih Header</SelectItem>
+                      <SelectItem value="none" className="text-xs">{dict.intake.select_header}</SelectItem>
                       {headers.map((h) => (
                         <SelectItem key={h} value={h} className="text-xs">
                           {h}
@@ -137,7 +148,7 @@ export function ColumnMappingView({
             <div className="flex items-center gap-2 px-1">
               <Info className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                Preview Data (2 Baris)
+                {dict.intake.preview_data.replace('{count}', '2')}
               </span>
             </div>
             <div className="rounded-xl border border-dashed bg-muted/10 p-4 space-y-3">
@@ -160,14 +171,14 @@ export function ColumnMappingView({
 
       <div className="pt-6 mt-6 border-t flex gap-3">
         <Button variant="outline" className="flex-1 h-11 text-xs font-bold" onClick={onCancel}>
-          Kembali
+          {dict.common.back}
         </Button>
         <Button 
           className="flex-[2] h-11 text-xs font-bold shadow-lg shadow-primary/20" 
           onClick={handleConfirm}
           disabled={Object.keys(mapping).length === 0}
         >
-          Konfirmasi & Impor Data
+          {dict.intake.confirm_import}
         </Button>
       </div>
     </div>

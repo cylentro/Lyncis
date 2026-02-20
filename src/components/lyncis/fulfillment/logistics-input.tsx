@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { formatCurrency, formatWeight } from '@/lib/formatters';
 import { Package, Scale, ChevronDown, ChevronUp, User, ShoppingBag, Info, MapPin } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useLanguage } from '@/components/providers/language-provider';
 
 export interface OrderLogisticsForm {
     serviceType: ServiceType;
@@ -52,6 +53,7 @@ export function LogisticsInput({
     onProceed,
     onBack,
 }: LogisticsInputProps) {
+    const { dict } = useLanguage();
     const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
     const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -212,14 +214,14 @@ export function LogisticsInput({
             <div className="p-4 border-b bg-muted/20">
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold">Input Logistik</h2>
+                        <h2 className="text-lg font-bold">{dict.wizard.logistics_title}</h2>
                         <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/5 border border-primary/10">
                             <div className="h-1 w-1 rounded-full bg-green-500 animate-pulse" />
                             <span className="text-[9px] font-bold text-primary uppercase tracking-tighter">Auto-save</span>
                         </div>
                     </div>
                     <Badge variant="outline" className="h-5 px-2 text-[9px] font-black uppercase tracking-widest border-muted-foreground/30">
-                        Step 3 / 4
+                        {dict.wizard.step_of.replace('{current}', '3').replace('{total}', '4')}
                     </Badge>
                 </div>
 
@@ -248,15 +250,15 @@ export function LogisticsInput({
                 
                 <div className="grid grid-cols-3 gap-2">
                     <div className="bg-background border rounded-lg p-2 text-center">
-                        <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">Pesanan</div>
+                        <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">{dict.common.orders_plural}</div>
                         <div className="font-bold text-sm leading-tight">{orders.length}</div>
                     </div>
                     <div className="bg-background border rounded-lg p-2 text-center">
-                        <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">Berat</div>
+                        <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">{dict.wizard.weight}</div>
                         <div className="font-bold text-sm leading-tight">{formatWeight(totalWeight)}</div>
                     </div>
                     <div className="bg-background border rounded-lg p-2 text-center border-green-600 dark:border-green-400">
-                        <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">Ongkir</div>
+                        <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">{dict.wizard.est_shipping}</div>
                         <div className="font-bold text-sm leading-tight text-green-600 dark:text-green-400">
                             {formatCurrency(totalCost)}
                         </div>
@@ -285,7 +287,7 @@ export function LogisticsInput({
                                         <Package className="h-3.5 w-3.5 text-muted-foreground" />
                                         <div className="flex flex-col">
                                             <span className="font-bold text-xs leading-none">{order.recipient.name}</span>
-                                            <span className="text-[9px] text-muted-foreground mt-0.5">{order.items.length} Barang</span>
+                                            <span className="text-[9px] text-muted-foreground mt-0.5">{order.items.length} {order.items.length === 1 ? dict.common.items_count.split(' ')[1] : dict.common.items_count_plural.split(' ')[1]}</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -315,7 +317,7 @@ export function LogisticsInput({
                                                 <div className="space-y-1">
                                                     <div className="flex items-center gap-1.5 text-muted-foreground font-bold uppercase text-[9px]">
                                                         <User className="h-3 w-3" />
-                                                        <span>Detail Penerima</span>
+                                                        <span>{dict.orders.recipient_info}</span>
                                                     </div>
                                                     <div className="pl-4.5 space-y-0.5">
                                                         <p className="font-bold">{order.recipient.name} • {order.recipient.phone}</p>
@@ -328,7 +330,7 @@ export function LogisticsInput({
                                                 <div className="space-y-1.5 pt-2 border-t border-border/50">
                                                     <div className="flex items-center gap-1.5 text-muted-foreground font-bold uppercase text-[9px]">
                                                         <ShoppingBag className="h-3 w-3" />
-                                                        <span>Daftar Barang</span>
+                                                        <span>{dict.orders.item_list}</span>
                                                     </div>
                                                     <div className="pl-4.5 space-y-1">
                                                         {order.items.map(item => (
@@ -347,7 +349,7 @@ export function LogisticsInput({
                                 <div className="p-3.5 grid gap-3.5">
                                     {/* Service Type */}
                                     <div className="grid gap-1.5 text-left">
-                                        <Label className="text-[9px] font-bold uppercase text-muted-foreground/80 tracking-widest pl-0.5">Layanan</Label>
+                                        <Label className="text-[9px] font-bold uppercase text-muted-foreground/80 tracking-widest pl-0.5">{dict.wizard.service}</Label>
                                         <Select 
                                             value={form.serviceType} 
                                             onValueChange={(val) => handleInputChange(order.id, 'serviceType', val as ServiceType)}
@@ -373,7 +375,7 @@ export function LogisticsInput({
                                                             className="text-xs font-medium"
                                                             disabled={!available.includes(key as ServiceType)}
                                                         >
-                                                            {label} {!available.includes(key as ServiceType) && "(Tidak tersedia)"}
+                                                            {label} {!available.includes(key as ServiceType) && `(${dict.common.not_available})`}
                                                         </SelectItem>
                                                     ));
                                                 })()}
@@ -384,7 +386,7 @@ export function LogisticsInput({
                                     {/* Weight & Dims Row */}
                                     <div className="grid grid-cols-2 gap-3.5">
                                         <div className="space-y-1.5">
-                                            <Label className="text-[9px] font-bold uppercase text-muted-foreground/80 tracking-widest pl-0.5">Berat (kg)</Label>
+                                            <Label className="text-[9px] font-bold uppercase text-muted-foreground/80 tracking-widest pl-0.5">{dict.wizard.weight} (kg)</Label>
                                             <div className="relative">
                                                 <Input 
                                                     type="number" 
@@ -400,7 +402,7 @@ export function LogisticsInput({
                                         </div>
                                         
                                         <div className="space-y-1.5">
-                                            <Label className="text-[9px] font-bold uppercase text-muted-foreground/80 tracking-widest pl-0.5">Dimensi (cm)</Label>
+                                            <Label className="text-[9px] font-bold uppercase text-muted-foreground/80 tracking-widest pl-0.5">{dict.wizard.dimensions} (cm)</Label>
                                             <div className="flex gap-1">
                                                 <Input 
                                                     placeholder="P" 
@@ -434,12 +436,12 @@ export function LogisticsInput({
                                     <div className="flex items-center justify-between text-xs bg-muted/20 px-3 py-2 rounded-lg border border-border/50">
                                         <div className="flex gap-4">
                                             <div className="flex flex-col">
-                                                <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter leading-none mb-0.5">Volumetric</span>
+                                                <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter leading-none mb-0.5">{dict.wizard.volumetric}</span>
                                                 <span className="font-bold text-[11px]">{formatWeight(form.volumetric)}</span>
                                             </div>
                                             <div className="flex flex-col">
                                                 <div className="flex items-center gap-1 mb-0.5">
-                                                    <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter leading-none">Charge</span>
+                                                    <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter leading-none">{dict.wizard.chargeable.split(' ')[0]}</span>
                                                     <Popover>
                                                         <PopoverTrigger asChild>
                                                             <button className="h-2.5 w-2.5 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
@@ -447,16 +449,16 @@ export function LogisticsInput({
                                                             </button>
                                                         </PopoverTrigger>
                                                         <PopoverContent side="top" className="w-56 p-2 text-[10px] leading-relaxed">
-                                                            <p className="font-bold mb-1">Informasi Berat Charge</p>
-                                                            <p>Ongkir dihitung dari berat tertinggi antara berat asli dan volume.</p>
+                                                            <p className="font-bold mb-1">{dict.wizard.charge_weight_info}</p>
+                                                            <p>{dict.wizard.charge_weight_desc}</p>
                                                             <div className="mt-2 flex flex-col gap-1">
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                                                    <span>Hitung berat asli (Normal)</span>
+                                                                    <span>{dict.wizard.original_weight_normal}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                                                                    <span>Hitung volume (Barang Bulky)</span>
+                                                                    <span>{dict.wizard.volumetric_bulky}</span>
                                                                 </div>
                                                             </div>
                                                         </PopoverContent>
@@ -468,7 +470,7 @@ export function LogisticsInput({
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter leading-none block mb-0.5">Est. Ongkir</span>
+                                            <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter leading-none block mb-0.5">{dict.wizard.est_shipping}</span>
                                             <span className="font-black text-xs text-foreground">
                                                 {formatCurrency(form.estimatedCost)}
                                             </span>
@@ -488,14 +490,14 @@ export function LogisticsInput({
                     className="flex-1"
                     onClick={onBack}
                 >
-                    Kembali
+                    {dict.wizard.back}
                 </Button>
                 <Button 
                     className="flex-[2]" 
                     disabled={!isValid}
                     onClick={onProceed}
                 >
-                    Lanjutkan
+                    {dict.wizard.continue}
                 </Button>
             </div>
         </div>

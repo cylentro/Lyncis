@@ -19,6 +19,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { getParsingConfidence } from '@/lib/whatsapp-parser';
+import { useLanguage } from '@/components/providers/language-provider';
 
 interface ExcelTriagePanelProps {
   orders: JastipOrder[];
@@ -33,6 +34,7 @@ export function ExcelTriagePanel({
   onApprove,
   onApproveAll,
 }: ExcelTriagePanelProps) {
+  const { dict } = useLanguage();
   // Auto-collapse for large batches
   const [isExpanded, setIsExpanded] = useState(orders.length <= 20);
   const [approvingId, setApprovingId] = useState<string | null>(null);
@@ -84,16 +86,16 @@ export function ExcelTriagePanel({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-amber-800 dark:text-amber-300">
-                {orders.length} pesanan dari Excel menunggu review
+                {dict.intake.excel_triage_title.replace('{count}', orders.length.toString())}
               </span>
               {warningCount > 0 && (
                 <Badge className="text-[9px] h-4 px-1.5 bg-destructive/10 text-destructive border-destructive/20 font-black uppercase tracking-tight">
-                  {warningCount} perlu perhatian
+                  {dict.intake.excel_triage_warning.replace('{count}', warningCount.toString())}
                 </Badge>
               )}
             </div>
             <p className="text-[10px] text-amber-600/70 dark:text-amber-400/60 mt-0.5">
-              Klik untuk {isExpanded ? 'sembunyikan' : 'lihat'} detail · Review kapan saja sebelum proses
+              {isExpanded ? dict.intake.excel_triage_hint_expanded : dict.intake.excel_triage_hint_collapsed}
             </p>
           </div>
           <div className="ml-1 text-amber-500/60 group-hover:text-amber-600 transition-colors">
@@ -108,11 +110,11 @@ export function ExcelTriagePanel({
           className="h-8 px-3 text-[11px] font-bold bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-sm shadow-green-500/20 active:scale-95 transition-all shrink-0"
         >
           {approvingAll ? (
-            <span className="animate-pulse">Menyetujui...</span>
+            <span className="animate-pulse">{dict.intake.approving}</span>
           ) : (
             <>
               <Check className="h-3.5 w-3.5 mr-1.5" />
-              Setujui Semua
+              {dict.intake.approve_all}
             </>
           )}
         </Button>
@@ -163,7 +165,7 @@ export function ExcelTriagePanel({
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-md"
                         onClick={() => onEdit(order)}
-                        title="Edit pesanan"
+                        title={dict.intake.edit_order_title}
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -173,7 +175,7 @@ export function ExcelTriagePanel({
                         className="h-7 w-7 text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-md"
                         onClick={() => handleApprove(order.id)}
                         disabled={isApproving}
-                        title="Setujui pesanan ini"
+                        title={dict.intake.approve_order_title}
                       >
                         {isApproving ? (
                           <span className="h-3.5 w-3.5 rounded-full border-2 border-green-500 border-t-transparent animate-spin block" />
@@ -218,14 +220,14 @@ export function ExcelTriagePanel({
                     {/* Phone */}
                     <div className="text-[10px] text-muted-foreground mb-1 truncate">
                       {order.recipient?.phone || (
-                        <span className="text-destructive/70 font-medium">Tanpa HP</span>
+                        <span className="text-destructive/70 font-medium">{dict.intake.no_phone}</span>
                       )}
                     </div>
 
                     {/* Address */}
                     <div className="text-[10px] text-muted-foreground/80 leading-snug mb-2 line-clamp-2">
                       {order.recipient?.addressRaw || (
-                        <span className="text-destructive/70 font-medium">Tanpa Alamat</span>
+                        <span className="text-destructive/70 font-medium">{dict.intake.no_address}</span>
                       )}
                     </div>
 
@@ -241,7 +243,7 @@ export function ExcelTriagePanel({
                     ) : (
                       <div className="flex items-center gap-1 text-[9px] text-destructive/80 font-bold mb-2 bg-destructive/[0.04] w-fit px-1.5 py-0.5 rounded border border-destructive/10">
                         <AlertCircle className="h-2.5 w-2.5 shrink-0" />
-                        <span>Lokasi belum terpetakan</span>
+                        <span>{dict.intake.location_not_mapped}</span>
                       </div>
                     )}
 
@@ -261,7 +263,7 @@ export function ExcelTriagePanel({
                           variant="outline"
                           className="text-[9px] font-bold py-0 h-4 px-1.5 bg-destructive/5 text-destructive border-destructive/20"
                         >
-                          Tanpa Barang
+                          {dict.intake.no_items}
                         </Badge>
                       )}
                     </div>

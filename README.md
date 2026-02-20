@@ -26,7 +26,7 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 - **Dynamic Order Table**: Enhanced "Barang" column with SKU and total piece (Pcs) counts
 - Seamless tag transition (Active -> Archived / Riwayat)
 
-### Phase 4: Polish & PWA (🚧 In Progress)
+### Phase 4: Polish & PWA (✅ Complete)
 - **Indonesian Location Dictionary**: Integrated 80k+ records (BPS/Postal codes) with smart alias matching (✅ Complete)
 - **Location Autocomplete**: Smart address completion in intake and edit forms (✅ Complete)
 - **Advanced WhatsApp Parser**: Span-based deduplication, inline header stripping, and Indonesian thousand separator support (✅ Complete)
@@ -35,7 +35,7 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 - **UI/UX Standardization**: Consistent drawer titles, black "Simpan" buttons, and clamped pagination jumps (✅ Complete)
 - **i18n Localization**: Dual-language (EN / ID) support with `LanguageProvider` and dynamic dictionary switching (✅ Complete)
 - **Visual Polish**: Loading skeletons, `Loader2` spinners, error boundary, and standardized `formatWeight` / `formatCurrency` utilities (✅ Complete)
-- **PWA configuration**: Offline capability and installability for field use
+- **PWA Configuration**: Full offline capability and installability via `@serwist/next` with custom branded iconography (✅ Complete)
 
 ## 🛠️ Tech Stack
 
@@ -108,7 +108,7 @@ src/
 - Table expansion optimized for ultra-wide displays
 - Intake dialog polished with active tag filtering
 
-**Phase 4: Partial** 🚧
+**Phase 4: Complete** ✅
 - Indonesian address dictionary with autocomplete (Integrated)
 - Smart WhatsApp Parser refinements (Span-based deduplication & greedy priority)
 - Automated Test Suite: Regex parser validation with 65+ test cases (✅ Complete)
@@ -126,11 +126,7 @@ src/
 - **Backend Sync Stability**: Unified `updatedAt` timestamps across all DB mutations and fixed navigation-level batch commit bugs (✅ Complete)
 - **Visual Polish**: Error boundary (`error.tsx`), `Skeleton` loaders for index page, `Loader2` spinners on parsing buttons, and unified Indonesian-locale formatters (✅ Complete)
 - **i18n**: Dual-language (EN/ID) `LanguageProvider` with full dictionary coverage across all dialogs and wizards (✅ Complete)
-
-**Next Up: Phase 4 PWA** 🚧
-- PWA configuration via `@serwist/next`
-- Branded favicon & `manifest.json`
-- Service worker for offline static caching
+- **PWA Setup**: Full @serwist/next integration with custom branded SVG icons and offline caching (✅ Complete)
 
 ## 🔧 Development
 
@@ -152,4 +148,4 @@ This project is part of the Lyncis POC initiative.
 ---
 
 **Last Updated**: February 20, 2026  
-**Build Status**: ✅ Passing production build (Next.js 16 / Turbopack)
+**Build Status**: ✅ Passing production build (Next.js 16 / Webpack for Serwist support)

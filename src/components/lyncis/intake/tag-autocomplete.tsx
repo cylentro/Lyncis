@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverAnchor,
 } from '@/components/ui/popover';
+import { useLanguage } from '@/components/providers/language-provider';
 
 interface TagAutocompleteProps {
   id?: string;
@@ -18,7 +19,8 @@ interface TagAutocompleteProps {
   placeholder?: string;
 }
 
-export function TagAutocomplete({ id = "tag-autocomplete", value, onChange, activeTags, placeholder = "Contoh: BKK-MAY-2025" }: TagAutocompleteProps) {
+export function TagAutocomplete({ id = "tag-autocomplete", value, onChange, activeTags, placeholder }: TagAutocompleteProps) {
+  const { dict } = useLanguage();
   const [open, setOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
@@ -101,7 +103,7 @@ export function TagAutocomplete({ id = "tag-autocomplete", value, onChange, acti
                 // Delay to allow click events on items to fire
                 setTimeout(() => setIsFocused(false), 150);
               }}
-              placeholder={placeholder}
+              placeholder={placeholder || (dict.common.edit === 'Edit' ? 'Example: BKK-MAY-2025' : 'Contoh: BKK-MAY-2025')}
               className="h-9 w-full bg-background border-border/60 shadow-xs rounded-md text-sm transition-all focus:ring-1 focus:ring-primary/20"
               autoComplete="off"
             />
@@ -119,7 +121,7 @@ export function TagAutocomplete({ id = "tag-autocomplete", value, onChange, acti
             {filteredTags.length > 0 ? (
               <div className="py-1">
                 <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/30">
-                  Tag Aktif
+                  {dict.common.active_tags}
                 </div>
                 {filteredTags.map((tag, idx) => (
                   <button
@@ -145,23 +147,23 @@ export function TagAutocomplete({ id = "tag-autocomplete", value, onChange, acti
               </div>
             ) : value.length > 0 ? (
               <div className="px-3 py-4 text-[10px] text-muted-foreground italic text-center border-b bg-muted/5">
-                 Tag baru akan dibuat
+                 {dict.common.new_tag_will_be_created}
               </div>
             ) : (
               <div className="px-3 py-6 text-[10px] text-muted-foreground text-center bg-muted/5">
-                Ketik untuk mencari atau membuat tag baru.
+                {dict.common.type_to_search_create}
               </div>
             )}
           </div>
           {filteredTags.length > 0 && (
             <div className="px-2 py-1.5 border-t bg-muted/20 flex items-center justify-between">
-              <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tight">Navigation</span>
+              <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tight">{dict.common.navigation}</span>
               <div className="flex items-center gap-2">
                 <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
-                  <kbd className="px-1 rounded bg-background border border-border/60 shadow-xs">↑↓</kbd> Pilih
+                  <kbd className="px-1 rounded bg-background border border-border/60 shadow-xs">↑↓</kbd> {dict.common.select}
                 </span>
                 <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
-                  <kbd className="px-1 rounded bg-background border border-border/60 shadow-xs">↵</kbd> Konfirmasi
+                  <kbd className="px-1 rounded bg-background border border-border/60 shadow-xs">↵</kbd> {dict.common.confirm}
                 </span>
               </div>
             </div>
