@@ -318,7 +318,7 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
                     <Button
                       variant="destructive"
                       size="icon"
-                      className="h-8 w-8 rounded-md active:scale-95 transition-all shadow-sm"
+                      className="h-8 w-8 rounded-md active:scale-95 transition-all text-muted-foreground/30 hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => removeItem(index)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -327,32 +327,31 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
               )}
  
                <div className="space-y-4">
-                 <div className="grid grid-cols-[1fr_80px_120px_120px_40px] gap-2 items-center px-1 mb-2">
-              <Label className="text-[10px] uppercase font-black text-muted-foreground ml-1">{dict.orders.item_name}</Label>
-              <Label className="text-[10px] uppercase font-black text-muted-foreground text-center">Qty</Label>
-              <Label className="text-[10px] uppercase font-black text-muted-foreground text-center">{dict.intake.unit_price}</Label>
-              <Label className="text-[10px] uppercase font-black text-muted-foreground text-center">{dict.intake.total_price}</Label>
-              <div />
-            </div>
-                     <div className="grid grid-cols-[1fr_80px_120px_120px_40px] gap-2 items-center">
-                      <div className="relative">
-                        <Input
-                          placeholder={dict.orders.item_name}
-                          value={item.name}
-                          onChange={(e) => updateItem(index, { ...item, name: e.target.value })}
-                          className="h-9 font-medium pr-8"
-                          readOnly={readOnly}
-                        />
-                      </div>
-
+                  <div>
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight ml-0.5">{dict.intake.edit_item_desc}</Label>
+                    <Input
+                      placeholder={dict.orders.item_name}
+                      value={item.name}
+                      onChange={(e) => updateItem(index, { ...item, name: e.target.value })}
+                      className="bg-background border-muted-foreground/20 rounded-xl h-10 font-medium mt-1 text-sm text-foreground"
+                      readOnly={readOnly}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-[9px] uppercase text-muted-foreground font-bold text-center block">Qty</Label>
                       <Input
                         type="number"
                         value={item.qty}
                         onChange={(e) => updateItem(index, updateQuantity(item, parseInt(e.target.value) || 0))}
-                        className="h-9 text-center font-bold"
+                        className="h-9 text-center font-bold rounded-xl bg-background border-muted-foreground/20 text-foreground"
                         readOnly={readOnly}
                       />
+                    </div>
 
+                    <div className="space-y-1">
+                      <Label className="text-[9px] uppercase text-muted-foreground font-bold text-center block">{dict.intake.unit_price}</Label>
                       <Input
                         type="text"
                         value={item.unitPrice ? formatNumber(item.unitPrice) : ''}
@@ -360,11 +359,14 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
                           const val = e.target.value.replace(/\./g, '');
                           updateItem(index, updateUnitPrice(item, parseInt(val) || 0));
                         }}
-                        className="h-9 text-center font-mono"
+                        className="h-9 text-center font-mono rounded-xl bg-background border-muted-foreground/20 text-foreground"
                         placeholder="0"
                         readOnly={readOnly}
                       />
+                    </div>
 
+                    <div className="space-y-1">
+                      <Label className="text-[9px] uppercase text-muted-foreground font-bold text-center block">{dict.intake.total_price}</Label>
                       <Input
                         type="text"
                         value={item.totalPrice ? formatNumber(item.totalPrice) : ''}
@@ -372,11 +374,12 @@ export function OrderFormContent<T extends JastipOrder | Omit<JastipOrder, 'id'>
                           const val = e.target.value.replace(/\./g, '');
                           updateItem(index, updateTotalPrice(item, parseInt(val) || 0));
                         }}
-                        className="h-9 text-center font-mono bg-muted/30"
+                        className="h-9 text-center font-mono rounded-xl bg-muted/30 border-muted-foreground/20 text-foreground"
                         placeholder="0"
                         readOnly={readOnly}
                       />
-                </div>
+                    </div>
+                  </div>
               </div>
             </div>
           ))}

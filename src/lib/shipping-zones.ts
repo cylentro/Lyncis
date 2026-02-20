@@ -73,6 +73,7 @@ export const SERVICE_LABELS: Record<ServiceType, string> = {
     nextday: 'Next Day',
     sameday: 'Same Day',
     instant: 'Instant',
+    cold: 'Cold Delivery',
 };
 
 // Rate definitions
@@ -84,6 +85,7 @@ const ZONE_RATES: { originZone: ShippingZone; destZone: ShippingZone; service: S
     { originZone: 'JABODETABEK', destZone: 'JABODETABEK', service: 'nextday', ratePerKg: 12000, minCharge: 12000 },
     { originZone: 'JABODETABEK', destZone: 'JABODETABEK', service: 'sameday', ratePerKg: 20000, minCharge: 20000 },
     { originZone: 'JABODETABEK', destZone: 'JABODETABEK', service: 'instant', ratePerKg: 35000, minCharge: 35000 },
+    { originZone: 'JABODETABEK', destZone: 'JABODETABEK', service: 'cold', ratePerKg: 50000, minCharge: 50000 },
 
     // To JAWA
     { originZone: 'JABODETABEK', destZone: 'JAWA', service: 'regular', ratePerKg: 12000, minCharge: 12000 },

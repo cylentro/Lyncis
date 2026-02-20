@@ -21,12 +21,17 @@ import {
 } from '@/lib/shipping-zones';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatWeight } from '@/lib/formatters';
-import { Package, Scale, ChevronDown, ChevronUp, User, ShoppingBag, Info, MapPin } from 'lucide-react';
+import { Package, Scale, ChevronDown, ChevronUp, User, ShoppingBag, Info, MapPin, Plus, Trash2, Sparkles, ShieldCheck, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useLanguage } from '@/components/providers/language-provider';
+import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ITEM_CATEGORIES } from '@/lib/constants/item-categories';
+import { categorizeOrderItems } from '@/lib/llm-parser';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface OrderLogisticsForm {
-    serviceType: ServiceType;
+    serviceType: ServiceType | '';
     weight: number;
     l: number;
     w: number;
@@ -34,6 +39,9 @@ export interface OrderLogisticsForm {
     volumetric: number;
     chargeable: number;
     estimatedCost: number;
+    isInsured: boolean;
+    insuredItems: { id: string; categoryCode: string; price: number }[];
+    insuranceFee: number;
 }
 
 interface LogisticsInputProps {
@@ -53,8 +61,9 @@ export function LogisticsInput({
     onProceed,
     onBack,
 }: LogisticsInputProps) {
-    const { dict } = useLanguage();
+    const { dict, locale } = useLanguage();
     const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+    const [serviceError, setServiceError] = useState<Record<string, boolean>>({});
     const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     // Toggle details visibility
@@ -68,11 +77,18 @@ export function LogisticsInput({
         });
     };
 
-    // Calculate validity for proceed button
     const isValid = useMemo(() => {
         return orders.every(order => {
             const form = logisticsState[order.id];
-            return form && form.weight > 0 && form.chargeable > 0;
+            if (!form) return false;
+            
+            const hasValidService = !!form.serviceType;
+            const hasValidWeights = form.weight > 0 && form.chargeable > 0;
+            const hasValidInsurance = form.isInsured 
+                ? form.insuredItems.every(i => i.categoryCode && i.categoryCode !== '')
+                : true;
+
+            return hasValidService && hasValidWeights && hasValidInsurance;
         });
     }, [orders, logisticsState]);
 
@@ -91,7 +107,7 @@ export function LogisticsInput({
     }, [logisticsState]);
 
     const totalCost = useMemo(() => {
-        return Object.values(logisticsState).reduce((acc, curr) => acc + (curr?.estimatedCost || 0), 0);
+        return Object.values(logisticsState).reduce((acc, curr) => acc + (curr?.estimatedCost || 0) + (curr?.insuranceFee || 0), 0);
     }, [logisticsState]);
 
     // Helper to recalculate costs when inputs change
@@ -105,7 +121,7 @@ export function LogisticsInput({
                 const originZone = getZoneForProvince(senderAddress.provinsi);
 
                 if (destZone && originZone) {
-                    const rate = getShippingRate(originZone, destZone, newForm.serviceType);
+                    const rate = newForm.serviceType ? getShippingRate(originZone, destZone, newForm.serviceType) : null;
                     if (rate) {
                         newForm.estimatedCost = calculateShippingCost(
                             newForm.chargeable, 
@@ -138,13 +154,12 @@ export function LogisticsInput({
                 let currentService = form.serviceType;
                 let updates: Partial<OrderLogisticsForm> = {};
 
-                // If current service not available on this route, pick a fallback
-                if (!availableServices.includes(currentService)) {
-                    currentService = availableServices[0] || 'regular';
-                    updates.serviceType = currentService;
+                if (currentService && !availableServices.includes(currentService as ServiceType)) {
+                    currentService = '';
+                    updates.serviceType = '';
                 }
 
-                const rate = getShippingRate(originZone, destZone, currentService);
+                const rate = currentService ? getShippingRate(originZone, destZone, currentService as ServiceType) : null;
                 if (rate) {
                     const newCost = calculateShippingCost(
                         form.chargeable, 
@@ -171,6 +186,19 @@ export function LogisticsInput({
         const currentForm = logisticsState[orderId];
         const newForm = { ...currentForm, [field]: value };
 
+        // Wipe category codes if service changes between cold and non-cold
+        if (field === 'serviceType') {
+            setServiceError(prev => ({ ...prev, [orderId]: false }));
+            const wasCold = currentForm.serviceType === 'cold';
+            const isCold = value === 'cold';
+            if (wasCold !== isCold) {
+                newForm.insuredItems = newForm.insuredItems.map(item => ({
+                    ...item,
+                    categoryCode: '',
+                }));
+            }
+        }
+
         // Recalculate derived values
         if (field === 'l' || field === 'w' || field === 'h') {
             newForm.volumetric = calculateVolumetricWeight(newForm.l, newForm.w, newForm.h);
@@ -191,7 +219,7 @@ export function LogisticsInput({
                 const originZone = getZoneForProvince(senderAddress.provinsi);
 
                 if (destZone && originZone) {
-                    const rate = getShippingRate(originZone, destZone, newForm.serviceType);
+                    const rate = newForm.serviceType ? getShippingRate(originZone, destZone, newForm.serviceType) : null;
                     if (rate) {
                         newForm.estimatedCost = calculateShippingCost(
                             newForm.chargeable, 
@@ -206,6 +234,72 @@ export function LogisticsInput({
         }
 
         onUpdate(orderId, newForm);
+    };
+
+
+
+    const handleInsuredItemChange = (orderId: string, itemId: string, field: 'categoryCode', value: any) => {
+        const currentForm = logisticsState[orderId];
+        const newItems = currentForm.insuredItems.map(item => 
+            item.id === itemId ? { ...item, [field]: value } : item
+        );
+        // We only change the category code, fee is fixed based on order items
+        onUpdate(orderId, { ...currentForm, insuredItems: newItems });
+    };
+
+    const [isAiParsing, setIsAiParsing] = useState<Record<string, boolean>>({});
+
+    const handleFillWithAi = async (orderId: string, order: JastipOrder) => {
+        const currentForm = logisticsState[orderId];
+        if (!currentForm?.serviceType) {
+            setServiceError(prev => ({ ...prev, [orderId]: true }));
+            handleFocus(orderId);
+            return;
+        }
+
+        if (!order.items || order.items.length === 0) {
+            toast.error(dict.wizard.insurance_error_no_items);
+            return;
+        }
+
+        setIsAiParsing(prev => ({ ...prev, [orderId]: true }));
+        try {
+            const itemsToCategorize = order.items.map(i => ({ id: i.id, name: i.name }));
+            const validCategories = currentForm.serviceType === 'cold'
+                ? ITEM_CATEGORIES.filter(c => c.code.startsWith('COLD_'))
+                : ITEM_CATEGORIES.filter(c => !c.code.startsWith('COLD_'));
+
+            const result = await categorizeOrderItems(itemsToCategorize, validCategories.map(c => ({ 
+                code: c.code, 
+                label: locale === 'id' ? c.label_id : c.label_en 
+            })));
+            
+            if (result && result.length > 0) {
+                const currentForm = logisticsState[orderId];
+                // Map the result back to insuredItems without touching the price
+                const newItems = currentForm.insuredItems.map(item => {
+                    const aiCategorized = result.find((r: any) => r.id === item.id);
+                    return {
+                        ...item,
+                        categoryCode: aiCategorized?.categoryCode || item.categoryCode
+                    };
+                });
+                
+                onUpdate(orderId, { 
+                    ...currentForm, 
+                    insuredItems: newItems, 
+                    isInsured: true
+                });
+                toast.success("Berhasil mengekstrak data asuransi.");
+            } else {
+                toast.error("Gagal mengekstrak data asuransi.");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Terjadi kesalahan saat mengekstrak data.");
+        } finally {
+            setIsAiParsing(prev => ({ ...prev, [orderId]: false }));
+        }
     };
 
     return (
@@ -348,17 +442,24 @@ export function LogisticsInput({
                                 
                                 <div className="p-3.5 grid gap-3.5">
                                     {/* Service Type */}
-                                    <div className="grid gap-1.5 text-left">
-                                        <Label className="text-[9px] font-bold uppercase text-muted-foreground/80 tracking-widest pl-0.5">{dict.wizard.service}</Label>
+                                    <div className="grid gap-1.5 text-left relative">
+                                        <Label className={cn("text-[9px] font-bold uppercase tracking-widest pl-0.5", serviceError[order.id] ? "text-destructive" : "text-muted-foreground/80")}>
+                                            {dict.wizard.service}
+                                        </Label>
                                         <Select 
-                                            value={form.serviceType} 
+                                            value={form.serviceType || undefined} 
                                             onValueChange={(val) => handleInputChange(order.id, 'serviceType', val as ServiceType)}
                                         >
                                             <SelectTrigger 
-                                                className="h-8.5 border-muted-foreground/15 font-bold text-xs bg-muted/5 group-hover:bg-background transition-colors"
+                                                className={cn(
+                                                    "h-8.5 font-bold text-xs transition-colors shadow-none",
+                                                    serviceError[order.id] 
+                                                        ? "border-destructive bg-destructive/5 text-destructive focus:ring-destructive" 
+                                                        : "border-muted-foreground/15 bg-muted/5 group-hover:bg-background"
+                                                )}
                                                 onFocus={() => handleFocus(order.id)}
                                             >
-                                                <SelectValue />
+                                                <SelectValue placeholder="Pilih Layanan" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {(() => {
@@ -432,6 +533,123 @@ export function LogisticsInput({
                                         </div>
                                     </div>
 
+                                    {/* Insurance Section */}
+                                    <div className="space-y-2.5 pt-1 border-t border-border/30">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Checkbox 
+                                                    id={`insurance-${order.id}`}
+                                                    checked={form.isInsured}
+                                                    onCheckedChange={(checked) => {
+                                                        const isInsured = !!checked;
+                                                        const updates: any = { isInsured };
+                                                        if (isInsured) {
+                                                            if (form.insuredItems.length === 0) {
+                                                                updates.insuredItems = order.items.map(i => ({
+                                                                    id: i.id,
+                                                                    categoryCode: '',
+                                                                    price: i.totalPrice
+                                                                }));
+                                                            }
+                                                            const totalInsuredValue = order.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+                                                            updates.insuranceFee = Math.round(totalInsuredValue * 0.002);
+                                                        } else {
+                                                            updates.insuranceFee = 0;
+                                                        }
+                                                        onUpdate(order.id, { ...form, ...updates });
+                                                    }}
+                                                />
+                                                <Label 
+                                                    htmlFor={`insurance-${order.id}`}
+                                                    className="text-[10px] font-bold uppercase tracking-wider cursor-pointer flex items-center gap-1.5"
+                                                >
+                                                    <ShieldCheck className="h-3 w-3 text-primary" />
+                                                    {dict.wizard.add_insurance}
+                                                </Label>
+                                            </div>
+
+                                            {form.isInsured && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 px-2 text-[9px] font-bold gap-1.5 border-primary/20 hover:bg-primary/5 text-primary"
+                                                    onClick={() => handleFillWithAi(order.id, order)}
+                                                    disabled={isAiParsing[order.id]}
+                                                >
+                                                    {isAiParsing[order.id] ? (
+                                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                                    ) : (
+                                                        <Sparkles className="h-3 w-3" />
+                                                    )}
+                                                    {dict.wizard.fill_with_ai}
+                                                </Button>
+                                            )}
+                                        </div>
+
+                                        <AnimatePresence>
+                                            {form.isInsured && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="space-y-2 overflow-hidden"
+                                                >
+                                                    {order.items.map((orderItem) => {
+                                                        const insuredItem = form.insuredItems.find(i => i.id === orderItem.id) || { categoryCode: '', price: orderItem.totalPrice, id: orderItem.id };
+                                                        return (
+                                                        <div key={orderItem.id} className="rounded-xl border border-border bg-white dark:bg-muted/10 p-3 flex items-center gap-4 transition-all overflow-hidden relative shadow-none">
+                                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                                <Label className="text-[11px] font-bold text-foreground truncate mb-1">
+                                                                    {orderItem.name}
+                                                                </Label>
+                                                                <div className="flex items-center gap-3 text-[9px] font-bold text-muted-foreground">
+                                                                    <div className="flex items-center gap-1 uppercase tracking-wider">
+                                                                        <span>Qty:</span>
+                                                                        <span className="text-foreground">{orderItem.qty}</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1 uppercase tracking-wider">
+                                                                        <span>Total:</span>
+                                                                        <span className="text-foreground font-mono">{formatCurrency(orderItem.totalPrice)}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="w-[200px] shrink-0">
+                                                                <Select
+                                                                    value={insuredItem.categoryCode || undefined}
+                                                                    onValueChange={(val) => handleInsuredItemChange(order.id, orderItem.id, 'categoryCode', val)}
+                                                                >
+                                                                    <SelectTrigger className="h-8 text-[10px] font-medium bg-muted/5 border-border/60 rounded-md shadow-none">
+                                                                        <SelectValue placeholder={dict.wizard.select_category} />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {ITEM_CATEGORIES
+                                                                             .filter(cat => form.serviceType === 'cold' ? cat.code.startsWith('COLD_') : !cat.code.startsWith('COLD_'))
+                                                                             .map(cat => (
+                                                                            <SelectItem key={cat.code} value={cat.code} className="text-[10px]">
+                                                                                {locale === 'id' ? cat.label_id : cat.label_en}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                        </div>
+                                                    )})}
+
+                                                    <div className="flex items-center justify-end pt-1">
+
+                                                        <div className="text-right">
+                                                            <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter block leading-none">Total Biaya Asuransi</span>
+                                                            <span className="text-[10px] font-black text-primary">
+                                                                {formatCurrency(form.insuranceFee)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+
                                     {/* Calculated Details */}
                                     <div className="flex items-center justify-between text-xs bg-muted/20 px-3 py-2 rounded-lg border border-border/50">
                                         <div className="flex gap-4">
@@ -472,7 +690,7 @@ export function LogisticsInput({
                                         <div className="text-right">
                                             <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter leading-none block mb-0.5">{dict.wizard.est_shipping}</span>
                                             <span className="font-black text-xs text-foreground">
-                                                {formatCurrency(form.estimatedCost)}
+                                                {formatCurrency(form.estimatedCost + (form.insuranceFee || 0))}
                                             </span>
                                         </div>
                                     </div>

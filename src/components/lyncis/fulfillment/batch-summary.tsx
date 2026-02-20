@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { JastipOrder, SenderAddress } from '@/lib/types';
+import { JastipOrder, SenderAddress, ServiceType } from '@/lib/types';
 import { useLanguage } from '@/components/providers/language-provider';
 import { OrderLogisticsForm } from './logistics-input';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,8 @@ import { SERVICE_LABELS } from '@/lib/shipping-zones';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { formatCurrency, formatWeight } from '@/lib/formatters';
+import { ITEM_CATEGORIES } from '@/lib/constants/item-categories';
+import { ShieldCheck } from 'lucide-react';
 
 interface BatchSummaryProps {
     orders: JastipOrder[];
@@ -60,7 +62,8 @@ export function BatchSummary({
     }, [logisticsState]);
 
     const totalCost = useMemo(() => {
-        return Object.values(logisticsState).reduce((acc, curr) => acc + (curr?.estimatedCost || 0), 0);
+        return Object.values(logisticsState).reduce((acc, curr) => 
+            acc + (curr?.estimatedCost || 0) + (curr?.insuranceFee || 0), 0);
     }, [logisticsState]);
 
     return (
@@ -137,7 +140,7 @@ export function BatchSummary({
                                                 {order.recipient.name}
                                             </h3>
                                             <div className="font-black text-foreground text-sm shrink-0">
-                                                {formatCurrency(form.estimatedCost)}
+                                                {formatCurrency(form.estimatedCost + (form.insuranceFee || 0))}
                                             </div>
                                         </div>
 
@@ -158,7 +161,7 @@ export function BatchSummary({
 
                                             <div className="flex flex-wrap gap-2 items-center pt-1">
                                                 <Badge variant="outline" className="h-4.5 px-1.5 text-[9px] uppercase tracking-wider font-extrabold bg-muted/30 border-muted-foreground/20 shrink-0">
-                                                    {SERVICE_LABELS[form.serviceType]}
+                                                    {form.serviceType ? SERVICE_LABELS[form.serviceType as ServiceType] : 'PILIH LAYANAN'}
                                                 </Badge>
                                                 <div className="flex items-center gap-2 text-[9px] font-bold text-muted-foreground">
                                                     <span className="flex items-center gap-1">
@@ -168,6 +171,12 @@ export function BatchSummary({
                                                     {form.volumetric > form.weight && (
                                                         <span className="text-amber-600 bg-amber-50 px-1 rounded border border-amber-100 shrink-0">
                                                             Vol: {formatWeight(form.volumetric)}
+                                                        </span>
+                                                    )}
+                                                    {form.isInsured && (
+                                                        <span className="text-primary bg-primary/5 px-1 rounded border border-primary/10 shrink-0 flex items-center gap-0.5">
+                                                            <ShieldCheck className="h-2.5 w-2.5" />
+                                                            Insured
                                                         </span>
                                                     )}
                                                 </div>
@@ -218,13 +227,36 @@ export function BatchSummary({
                                                                         </span>
                                                                     )}
                                                                 </div>
-                                                                <span className="text-[10px] font-black bg-muted/50 px-1.5 py-0.5 rounded border shadow-xs shrink-0">
+                                                                <span className="text-[10px] font-black bg-muted/50 px-1.5 py-0.5 rounded border shrink-0">
                                                                     x{item.qty}
                                                                 </span>
                                                             </div>
                                                         ))}
                                                     </div>
                                                 </div>
+
+                                                {/* Insurance Detail Section */}
+                                                {form.isInsured && (
+                                                    <div className="space-y-2 bg-primary/5 p-3 rounded-xl border border-primary/10">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <ShieldCheck className="h-3 w-3 text-primary" />
+                                                                <span className="text-primary font-bold uppercase tracking-widest text-[9px]">Detail Asuransi</span>
+                                                            </div>
+                                                            <span className="font-black text-[10px] text-primary">{formatCurrency(form.insuranceFee)}</span>
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            {form.insuredItems.map((item, idx) => (
+                                                                <div key={item.id || idx} className="flex justify-between items-center text-[10px]">
+                                                                    <span className="text-muted-foreground font-medium">
+                                                                        {ITEM_CATEGORIES.find(c => c.code === item.categoryCode)?.label_id || item.categoryCode}
+                                                                    </span>
+                                                                    <span className="font-bold">{formatCurrency(item.price)}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
 
                                                 {/* Metadata Below */}
                                                 <div className="border-t border-border/20 pt-3">

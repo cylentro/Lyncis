@@ -159,6 +159,10 @@ export const id = {
         charge_weight_desc: 'Ongkir dihitung dari berat tertinggi antara berat asli dan volume.',
         original_weight_normal: 'Hitung berat asli (Normal)',
         volumetric_bulky: 'Hitung volume (Barang Bulky)',
+        add_insurance: 'Tambah Asuransi (0.2%)',
+        fill_with_ai: 'Isi dengan AI',
+        select_category: 'Pilih Kategori',
+        insurance_error_no_items: 'Tidak ada barang untuk dikategorikan.',
     },
     toast: {
         batch_all_removed: 'Semua pesanan dikeluarkan dari batch',

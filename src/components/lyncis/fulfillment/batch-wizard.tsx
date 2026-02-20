@@ -1,7 +1,9 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { 
     Sheet, 
     SheetContent, 
@@ -24,7 +26,8 @@ import {
     unstageOrders, 
     commitBatch,
     autoSaveLogistics,
-    autoSaveSenderId
+    autoSaveSenderId,
+    autoSaveInsurance
 } from '@/hooks/use-lyncis-db';
 import { useLanguage } from '@/components/providers/language-provider';
 import { JastipOrder, SenderAddress } from '@/lib/types';
@@ -64,6 +67,18 @@ export function BatchWizard({
     const [selectedSenderId, setSelectedSenderId] = useState<string | null>(null);
     const [removingOrder, setRemovingOrder] = useState<string | 'all' | string[] | null>(null);
 
+    const previousItemsHash = React.useRef<string | null>(null);
+
+    useEffect(() => {
+        if (orders) {
+            const currentItemsHash = JSON.stringify(orders.map(o => ({ id: o.id, items: o.items })));
+            if (previousItemsHash.current && previousItemsHash.current !== currentItemsHash) {
+                setCurrentStep('validate');
+            }
+            previousItemsHash.current = currentItemsHash;
+        }
+    }, [orders]);
+
     // Logistics Data State (Temporary per session)
     // Initialize with order data if available
     const [logisticsState, setLogisticsState] = useState<Record<string, OrderLogisticsForm>>({});
@@ -80,7 +95,7 @@ export function BatchWizard({
                     // For now, if it's missing, add it.
                     if (!newState[o.id]) {
                         newState[o.id] = {
-                            serviceType: o.logistics.serviceType || 'regular',
+                            serviceType: o.logistics.serviceType || '',
                             weight: o.logistics.finalPackedWeight || 0,
                             l: o.logistics.dimensions?.l || 0,
                             w: o.logistics.dimensions?.w || 0,
@@ -88,6 +103,9 @@ export function BatchWizard({
                             volumetric: o.logistics.volumetricWeight || 0,
                             chargeable: o.logistics.chargeableWeight || 0,
                             estimatedCost: o.logistics.estimatedCost || 0,
+                            isInsured: o.insurance?.isInsured || false,
+                            insuredItems: o.insurance?.items.map((item, idx) => ({ id: item.itemId || o.items[idx]?.id || crypto.randomUUID(), ...item })) || [],
+                            insuranceFee: o.insurance?.totalFee || 0,
                         };
                         hasChanges = true;
                     }
@@ -156,7 +174,7 @@ export function BatchWizard({
 
         // Fire-and-forget auto-save to database
         const logisticsUpdates: Partial<JastipOrder['logistics']> = {
-            serviceType: updates.serviceType,
+            serviceType: updates.serviceType === '' ? undefined : updates.serviceType,
             finalPackedWeight: updates.weight,
             dimensions: { 
                 l: updates.l ?? logisticsState[id].l, 
@@ -168,12 +186,24 @@ export function BatchWizard({
             estimatedCost: updates.estimatedCost,
         };
         autoSaveLogistics(id, logisticsUpdates);
+
+        // Update insurance if changed
+        if (updates.isInsured !== undefined || updates.insuredItems !== undefined || updates.insuranceFee !== undefined) {
+            const currentForm = logisticsState[id];
+            const insurance = {
+                isInsured: updates.isInsured ?? currentForm.isInsured,
+                items: (updates.insuredItems ?? currentForm.insuredItems).map(({ id: itemId, categoryCode, price }) => ({ itemId, categoryCode, price })),
+                totalFee: updates.insuranceFee ?? currentForm.insuranceFee,
+            };
+            autoSaveInsurance(id, insurance);
+        }
     };
 
     const handleCommitBatch = async () => {
         try {
-            // Prepare logistics map
+            // Prepare logistics and insurance maps
             const logisticsMap: Record<string, Partial<JastipOrder['logistics']>> = {};
+            const insuranceMap: Record<string, JastipOrder['insurance']> = {};
             const orderIds: string[] = [];
 
             orders?.forEach(o => {
@@ -182,18 +212,24 @@ export function BatchWizard({
                     orderIds.push(o.id);
                     logisticsMap[o.id] = {
                         originId: selectedSenderId,
-                        serviceType: logistics.serviceType,
+                        serviceType: logistics.serviceType === '' ? undefined : logistics.serviceType,
                         finalPackedWeight: logistics.weight,
                         dimensions: { l: logistics.l, w: logistics.w, h: logistics.h },
                         volumetricWeight: logistics.volumetric,
                         chargeableWeight: logistics.chargeable,
                         estimatedCost: logistics.estimatedCost,
                     };
+                    
+                    insuranceMap[o.id] = {
+                        isInsured: logistics.isInsured,
+                        items: logistics.insuredItems.map(({ id: itemId, categoryCode, price }) => ({ itemId, categoryCode, price })),
+                        totalFee: logistics.insuranceFee,
+                    };
                 }
             });
 
             if (orderIds.length > 0) {
-                await commitBatch(orderIds, logisticsMap);
+                await commitBatch(orderIds, logisticsMap, insuranceMap);
                 toast.success(dict.toast.batch_processed_success);
                 onOpenChange(false);
             }
@@ -215,18 +251,29 @@ export function BatchWizard({
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent 
                 side="right" 
-                className="w-full sm:max-w-2xl p-0 flex flex-col h-full bg-background border-l"
+                className="w-full sm:max-w-2xl p-0 flex flex-col h-full bg-background border-l shadow-none"
                 onPointerDownOutside={(e) => e.preventDefault()}
                 onEscapeKeyDown={(e) => e.preventDefault()}
+                showCloseButton={false}
             >
-                <SheetHeader className="px-6 py-4 border-b shrink-0">
-                    <SheetTitle className="flex items-center gap-2">
-                        <span>{dict.wizard.title}</span>
-                        <span className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground opacity-40 ml-2">
-                            {dict.wizard.step_of.replace('{current}', (STEP_ORDER.indexOf(currentStep) + 1).toString()).replace('{total}', '4')}
-                        </span>
-                    </SheetTitle>
-                    <Progress value={progress} className="h-1 mt-2" />
+                <SheetHeader className="px-6 py-4 border-b shrink-0 flex flex-col gap-2">
+                    <div className="flex items-center justify-between w-full">
+                        <SheetTitle className="flex items-center gap-2">
+                            <span>{dict.wizard.title}</span>
+                            <span className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground opacity-40 ml-2">
+                                {dict.wizard.step_of.replace('{current}', (STEP_ORDER.indexOf(currentStep) + 1).toString()).replace('{total}', '4')}
+                            </span>
+                        </SheetTitle>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => onOpenChange(false)} 
+                            className="h-9 w-9 bg-muted/70 hover:bg-destructive hover:text-white transition-all duration-200 border border-transparent active:scale-95 flex items-center justify-center p-0 rounded-full"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    <Progress value={progress} className="h-1 mt-1" />
                 </SheetHeader>
 
                 <div className="flex-1 flex flex-col min-h-0">

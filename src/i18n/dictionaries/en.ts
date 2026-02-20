@@ -161,6 +161,10 @@ export const en: Dictionary = {
         charge_weight_desc: 'Shipping cost is calculated from the higher weight between original weight and volume.',
         original_weight_normal: 'Original weight (Normal)',
         volumetric_bulky: 'Volumetric (Bulky items)',
+        add_insurance: 'Add Insurance (0.2%)',
+        fill_with_ai: 'Fill with AI',
+        select_category: 'Select Category',
+        insurance_error_no_items: 'No items to categorize.',
     },
     toast: {
         batch_all_removed: 'All orders removed from batch',

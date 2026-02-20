@@ -222,6 +222,18 @@ export async function autoSaveLogistics(id: string, logistics: Partial<JastipOrd
 }
 
 /**
+ * Auto-save insurance data during input process.
+ */
+export async function autoSaveInsurance(id: string, insurance: JastipOrder['insurance']): Promise<void> {
+    const order = await db.orders.get(id);
+    if (!order) return;
+    await db.orders.update(id, {
+        insurance,
+        updatedAt: Date.now(),
+    });
+}
+
+/**
  * Auto-save sender ID to all staged orders in the current batch.
  */
 export async function autoSaveSenderId(ids: string[], senderId: string): Promise<void> {
@@ -287,17 +299,20 @@ export async function unstageOrders(ids: string[]): Promise<void> {
  */
 export async function commitBatch(
     ids: string[],
-    logisticsMap: Record<string, Partial<JastipOrder['logistics']>>
+    logisticsMap: Record<string, Partial<JastipOrder['logistics']>>,
+    insuranceMap?: Record<string, JastipOrder['insurance']>
 ): Promise<void> {
     await db.transaction('rw', db.orders, async () => {
         for (const id of ids) {
             const logisticsUpdates = logisticsMap[id] || {};
+            const insuranceUpdates = insuranceMap?.[id];
             const order = await db.orders.get(id);
             if (!order) continue;
 
             await db.orders.update(id, {
                 status: 'processed',
                 logistics: { ...order.logistics, ...logisticsUpdates },
+                ...(insuranceUpdates && { insurance: insuranceUpdates }),
                 updatedAt: Date.now(),
             });
         }

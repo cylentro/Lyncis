@@ -239,3 +239,71 @@ export async function parseWithLLM(text: string): Promise<Partial<JastipOrder>[]
         throw new Error(error.message || 'Gagal memproses teks dengan AI.');
     }
 }
+
+/**
+ * Specifically categorizes existing items into insurance categories using AI.
+ */
+export async function categorizeOrderItems(
+    items: { id: string; name: string }[],
+    categories: { code: string; label: string }[]
+): Promise<{ id: string; categoryCode: string }[]> {
+    if (!API_KEY) {
+        throw new Error('Ekstraksi AI tidak tersedia.');
+    }
+
+    const categoryListStr = categories.map(c => `${c.code}: ${c.label}`).join('\n');
+    const itemsListStr = items.map(i => `${i.id}: ${i.name}`).join('\n');
+
+    const model = genAI.getGenerativeModel({ model: LLM_MODEL });
+    const isGemini = AI_MODE === 'gemini';
+
+    const prompt = `Assign the most appropriate insurance category for each item below.
+You MUST process EVERY item in the list and return its corresponding category.
+If a category is unclear, default to the first or most generic category.
+
+ALLOWED CATEGORIES:
+${categoryListStr}
+
+ITEMS TO CATEGORIZE:
+${itemsListStr}
+
+Return a pure JSON Array, format required: [{"id": "item-id-1", "categoryCode": "CODE"}]`;
+
+    const generationConfig: any = {
+        temperature: 0.1,
+        responseMimeType: isGemini ? 'application/json' : 'text/plain',
+    };
+
+    if (isGemini) {
+        generationConfig.responseSchema = {
+            type: 'ARRAY',
+            items: {
+                type: 'OBJECT',
+                properties: {
+                    id: { type: 'STRING' },
+                    categoryCode: { type: 'STRING' },
+                },
+                required: ['id', 'categoryCode'],
+            },
+        };
+    }
+
+    try {
+        const result = await model.generateContent({
+            contents: [{
+                role: 'user',
+                parts: [{ text: prompt }]
+            }],
+            generationConfig,
+        });
+
+        const responseRaw = result.response.text();
+        const responseText = isGemini ? responseRaw : cleanJsonString(responseRaw);
+
+        const parsed = JSON.parse(responseText);
+        return Array.isArray(parsed) ? parsed : [parsed];
+    } catch (error) {
+        console.error('Insurance AI Parsing Error:', error);
+        throw new Error('Gagal mengekstrak kategori asuransi dengan AI.');
+    }
+}

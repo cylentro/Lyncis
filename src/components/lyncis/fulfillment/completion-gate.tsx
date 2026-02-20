@@ -75,21 +75,20 @@ export function CompletionGate({
         <div className="flex flex-col flex-1 min-h-0 bg-background">
             {/* Header Status */}
             <div className="p-6 border-b">
-                <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-xl font-semibold text-foreground flex items-center gap-3">
+                <div className="flex items-center justify-between gap-4 mb-2">
+                    <h2 className="text-xl font-semibold text-foreground flex items-center gap-3 truncate min-w-0">
                         <Checkbox 
                             checked={selectedIds.size === orders.length && orders.length > 0} 
                             onCheckedChange={handleSelectAll} 
-                            className="h-5 w-5 rounded-md data-[state=checked]:bg-primary"
+                            className="h-5 w-5 rounded-md data-[state=checked]:bg-primary shrink-0"
                         />
-                        {dict.wizard.validate_title}
-                        <Badge variant={allComplete ? 'default' : 'secondary'} className="text-sm">
+                        <span className="truncate">{dict.wizard.validate_title}</span>
+                        <Badge variant={allComplete ? 'default' : 'secondary'} className="text-sm shrink-0">
                             {completeCount} / {orders.length} {dict.wizard.ready}
                         </Badge>
                     </h2>
                     {selectedIds.size > 0 ? (
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-muted-foreground mr-2">{dict.orders.selected_count.replace('{count}', selectedIds.size.toString())}</span>
+                        <div className="flex items-center gap-2 shrink-0">
                             <Button 
                                 variant="destructive" 
                                 size="sm" 
@@ -97,10 +96,10 @@ export function CompletionGate({
                                     onRemoveSelected(Array.from(selectedIds));
                                     setSelectedIds(new Set());
                                 }} 
-                                className="h-8 gap-1.5 px-3 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all font-bold"
+                                className="h-8 gap-1.5 px-3 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all font-bold whitespace-nowrap"
                             >
                                 <Trash2 className="h-3.5 w-3.5" />
-                                {dict.wizard.remove_selected}
+                                {dict.wizard.remove_selected} ({selectedIds.size})
                             </Button>
                         </div>
                     ) : (
@@ -108,7 +107,7 @@ export function CompletionGate({
                             variant="destructive" 
                             size="sm" 
                             onClick={onRemoveAllOrders} 
-                            className="h-8 gap-1.5 px-3 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all font-bold"
+                            className="h-8 gap-1.5 px-3 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all font-bold shrink-0 whitespace-nowrap"
                         >
                             <Trash2 className="h-3.5 w-3.5" />
                             {dict.wizard.empty_batch}
@@ -133,10 +132,10 @@ export function CompletionGate({
                             return (
                                 <motion.div
                                     key={order.id}
-                                    layout
-                                    initial={{ opacity: 0, y: 20 }}
+                                    initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
                                 >
                                     <div className={cn(
                                         "group relative border rounded-xl overflow-hidden transition-all",
@@ -232,34 +231,36 @@ export function CompletionGate({
                                                     )}
 
                                                     {/* Address & Area Combined */}
-                                                    <div className="flex flex-col gap-1.5">
-                                                        {/* Address Raw */}
-                                                        {!order.recipient.addressRaw ? (
-                                                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40 w-fit">
-                                                                <FileText className="h-3 w-3 shrink-0" />
-                                                                {dict.wizard.address_missing}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
-                                                                {order.recipient.addressRaw}
-                                                            </div>
-                                                        )}
+                                                    {((!order.recipient.addressRaw) || (!order.recipient.kelurahan || !order.recipient.kodepos) || isExpanded) && (
+                                                        <div className="flex flex-col gap-1.5">
+                                                            {/* Address Raw */}
+                                                            {!order.recipient.addressRaw ? (
+                                                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-900/40 w-fit">
+                                                                    <FileText className="h-3 w-3 shrink-0" />
+                                                                    {dict.wizard.address_missing}
+                                                                </div>
+                                                            ) : isExpanded ? (
+                                                                <div className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+                                                                    {order.recipient.addressRaw}
+                                                                </div>
+                                                            ) : null}
 
-                                                        {/* Area / Shipping Data */}
-                                                        {(!order.recipient.kelurahan || !order.recipient.kodepos) ? (
-                                                            <div className="flex items-center gap-1.5 text-[10px] text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-900/20 w-fit px-2 py-1 rounded border border-red-200 dark:border-red-900/40">
-                                                                <MapPin className="h-3 w-3 shrink-0" />
-                                                                {dict.wizard.location_missing}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="flex items-center gap-1.5 text-[10px] text-primary/80 font-medium bg-primary/[0.03] w-fit px-2 py-0.5 rounded border border-primary/10">
-                                                                <MapPin className="h-3 w-3 shrink-0" />
-                                                                <span className="truncate">
-                                                                    {order.recipient.kelurahan}, {order.recipient.kecamatan}, {order.recipient.kota}, {order.recipient.provinsi} {order.recipient.kodepos}
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                                            {/* Area / Shipping Data */}
+                                                            {(!order.recipient.kelurahan || !order.recipient.kodepos) ? (
+                                                                <div className="flex items-center gap-1.5 text-[10px] text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-900/20 w-fit px-2 py-1 rounded border border-red-200 dark:border-red-900/40">
+                                                                    <MapPin className="h-3 w-3 shrink-0" />
+                                                                    {dict.wizard.location_missing}
+                                                                </div>
+                                                            ) : isExpanded ? (
+                                                                <div className="flex items-center gap-1.5 text-[10px] text-primary/80 font-medium bg-primary/[0.03] w-fit px-2 py-0.5 rounded border border-primary/10">
+                                                                    <MapPin className="h-3 w-3 shrink-0" />
+                                                                    <span className="truncate">
+                                                                        {order.recipient.kelurahan}, {order.recipient.kecamatan}, {order.recipient.kota}, {order.recipient.provinsi} {order.recipient.kodepos}
+                                                                    </span>
+                                                                </div>
+                                                            ) : null}
+                                                        </div>
+                                                    )}
 
                                                     {/* Items Triage */}
                                                     {(!order.items || order.items.length === 0) ? (
@@ -309,7 +310,7 @@ export function CompletionGate({
                                                                                 <div className="flex items-center gap-2 min-w-0 flex-1">
                                                                                     <span className="text-[11px] font-bold truncate">{item.name}</span>
                                                                                 </div>
-                                                                                <span className="text-[10px] font-black bg-background px-1.5 py-0.5 rounded border ml-2 shadow-xs shrink-0">
+                                                                                <span className="text-[10px] font-black bg-background px-1.5 py-0.5 rounded border ml-2 shrink-0">
                                                                                     x{item.qty}
                                                                                 </span>
                                                                             </div>

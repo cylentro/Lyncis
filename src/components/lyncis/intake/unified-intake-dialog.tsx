@@ -206,12 +206,12 @@ export function UnifiedIntakePanel({
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l overflow-hidden"
+        className="w-full sm:max-w-2xl p-0 flex flex-col h-full bg-background border-l overflow-hidden shadow-none"
         onPointerDownOutside={(e) => e.preventDefault()}
         showCloseButton={false}
       >
         {/* ── Compact Header ── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b bg-background/95 backdrop-blur-md z-30 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b bg-background z-30 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Plus className="h-5 w-5" />

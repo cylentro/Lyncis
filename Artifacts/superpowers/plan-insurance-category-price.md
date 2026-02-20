@@ -1,42 +1,35 @@
-# Insurance Implementation Plan
+# Plan: Refining Insurance Flow & Removing Shadows
 
-Implement insurance opt-in for orders, requiring item category and price, with automatic fee calculation (0.2%).
+## Goals
+1. Remove all shadows (`shadow-sm`, `shadow-md`, `shadow-[...]`) from the insurance UI and general logistics cards to flatten the design.
+2. Fix the insurance flow: Instead of allowing users to manually construct a list of "insured items", the UX should iterate over the existing `order.items` (from order creation). 
+3. For each existing item, allow the user to select an `item category` for insurance purposes, reusing the pre-inputted `totalPrice` as the insured value.
 
-## Proposed Changes
+## Constraints & Risks
+- When an order item is modified (earlier in the flow or via "Edit Order"), the insurance list should react accordingly or fail gracefully if an item is removed.
+- The insurance fee calculation must use the sum of all item prices, or the user can choose which items to insure. Given the prompt: "each item should be assigned to item category", we assume all items are insured if the checkbox is checked.
 
-### Core Data Model
-#### [MODIFY] [types.ts](file:///Users/christianhadianto/Documents/TechSmith/Lyncis/src/lib/types.ts)
-- Add `InsuranceInfo` interface.
-- Add `insurance?: InsuranceInfo` to `JastipOrder`.
+## Step-by-Step Implementation
 
-### Localization
-#### [MODIFY] [en.ts](file:///Users/christianhadianto/Documents/TechSmith/Lyncis/src/i18n/dictionaries/en.ts)
-- Add translations for `insurance`, `item_category`, `item_price`, `insurance_fee`, etc.
-#### [MODIFY] [id.ts](file:///Users/christianhadianto/Documents/TechSmith/Lyncis/src/i18n/dictionaries/id.ts)
-- Add translations for `asuransi`, `kategori_barang`, `harga_barang`, `biaya_asuransi`, etc.
+1. **Update `src/lib/types.ts`:**
+   - Update `JastipOrder['insurance']['items']` to optionally strongly link to `order.items` by adding `itemId?: string; name?: string;`. This ensures we retain the context.
+   
+2. **Update `src/components/lyncis/fulfillment/logistics-input.tsx`:**
+   - **Form State Initialization**: When `isInsured` is checked, automatically construct `form.insuredItems` by mapping over `order.items` directly (so no `uuidv4()` for new blank items). Pre-fill `price` with `item.totalPrice` and `itemId` with `item.id`.
+   - **Remove Shadow Classes**: Scour the component for `shadow-xs`, `shadow-sm`, `shadow-md` and remove them from the card/container styles.
+   - **UI Changes**: 
+     - Remove the "Add Item" button under the insurance section.
+     - Remove the "Delete Item" button (unless user can selectively insure individual items, but the prompt implies assigning a category to *every* item).
+     - Display a vertical stack (or horizontal grid) for each item:
+       - Show the original `item.name` (read-only) and `item.qty`.
+       - Show a Category Select dropdown for assigning the insurance category.
+       - Show the locked `totalPrice` for the item.
+     - Automatically sum the insurance fee based on `item.totalPrice` * 0.2%. (Wait, is the price editable here? The user said "item price already been inputed", so it should be purely read-only).
 
-### Constants & Utilities
-#### [NEW] [categories.ts](file:///Users/christianhadianto/Documents/TechSmith/Lyncis/src/lib/constants/categories.ts)
-- Hardcode the 15 categories from `item category.csv` for fast access in the UI.
+3. **Update `src/components/lyncis/fulfillment/batch-wizard.tsx`:**
+   - Ensure that `insuredItems` mapping uses the order's actual items if it falls back to default.
 
-### UI Components
-#### [MODIFY] [order-form-content.tsx](file:///Users/christianhadianto/Documents/TechSmith/Lyncis/src/components/lyncis/bucket/order-form-content.tsx)
-- Integrate the Insurance section (Toggle + Fields).
-- Implement real-time calculation of 0.2% fee.
-- Ensure validation logic accounts for mandatory fields when insurance is enabled.
+4. **Verify Calculations**:
+   - Double-check that `totalCost` and `insuranceFee` compute correctly without manual price input.
 
-### Verification Plan
-
-### Automated Tests
-- Run `npm test src/lib/__tests__/item-parser.test.ts` to ensure no regressions.
-- Add a new test `src/lib/__tests__/insurance.test.ts` to verify the 0.2% calculation logic.
-
-### Manual Verification
-1. Open the "Add Order" or "Edit Order" dialog.
-2. Toggle "Add Insurance" to ON.
-3. Verify that Category and Price fields appear.
-4. Select a category and enter a price (e.g., 10,000,000).
-5. Verify that "Insurance Fee" automatically shows 20,000 (0.2%).
-6. Toggle "Add Insurance" to OFF.
-7. Verify fields disappear.
-8. Save the order and re-open to verify the insurance state is persisted.
+Please run `/superpowers-execute-plan` if this plan aligns with your expectations!

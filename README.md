@@ -36,6 +36,7 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 - **i18n Localization**: Dual-language (EN / ID) support with `LanguageProvider` and dynamic dictionary switching (✅ Complete)
 - **Visual Polish**: Loading skeletons, `Loader2` spinners, error boundary, and standardized `formatWeight` / `formatCurrency` utilities (✅ Complete)
 - **PWA Configuration**: Full offline capability and installability via `@serwist/next` with custom branded iconography (✅ Complete)
+- **Refining Logistics & UI Consistency**: Added "Cold Delivery" restricted category mapping, shadow-none aesthetic across all components, and zero-state dropdown defaults (✅ Complete)
 
 ## 🛠️ Tech Stack
 

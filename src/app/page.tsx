@@ -382,7 +382,7 @@ export default function BucketPage() {
 
         <main className="flex-1 overflow-hidden bg-muted/20">
           <div className={cn(
-            "w-full px-4 py-4 md:px-8 h-full transition-all duration-500 [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] mx-auto font-sans",
+            "w-full p-4 md:p-8 h-full transition-all duration-500 [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] mx-auto font-sans",
             isSidebarCollapsed ? "max-w-[99%] 2xl:max-w-[2560px]" : "max-w-[99%] 2xl:max-w-[1920px]"
           )}>
             <div className={cn(

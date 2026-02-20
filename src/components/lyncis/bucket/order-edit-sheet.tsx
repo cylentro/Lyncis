@@ -124,7 +124,7 @@ export function OrderEditSheet({
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent 
         side="right" 
-        className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l shadow-2xl overflow-hidden"
+        className="w-full sm:max-w-2xl p-0 flex flex-col h-full bg-background border-l shadow-none overflow-hidden"
         onPointerDownOutside={(e) => {
           if (mode === 'review' || !readOnly) {
             e.preventDefault();
@@ -138,7 +138,7 @@ export function OrderEditSheet({
         showCloseButton={false}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b bg-background/95 backdrop-blur-md z-30 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b bg-background z-30 shrink-0">
           <div className="flex items-center gap-3">
              <div className={cn(
                "flex h-10 w-10 items-center justify-center rounded-xl",

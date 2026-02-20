@@ -1,6 +1,6 @@
 export type OrderStatus = 'unassigned' | 'staged' | 'processed';
 
-export type ServiceType = 'regular' | 'nextday' | 'sameday' | 'instant';
+export type ServiceType = 'regular' | 'nextday' | 'sameday' | 'instant' | 'cold';
 
 export interface SenderAddress {
     id: string;
@@ -75,5 +75,15 @@ export interface JastipOrder {
         parseWarning?: boolean;
         /** The original raw text block associated with this order */
         originalRawText?: string;
+    };
+
+    insurance?: {
+        isInsured: boolean;
+        items: {
+            itemId?: string;
+            categoryCode: string;
+            price: number;
+        }[];
+        totalFee: number;
     };
 }
