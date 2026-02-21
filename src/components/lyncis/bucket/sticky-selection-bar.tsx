@@ -44,35 +44,35 @@ export function StickySelectionBar({
             "w-[calc(100%-2rem)] sm:w-auto sm:min-w-[400px] justify-between"
           )}
         >
-          <div className="flex items-center gap-3 pr-4 border-r border-white/10">
+          <div className="flex items-center gap-2.5 pr-3 md:pr-4 border-r border-white/10 shrink-0">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={onDeselect}
-              className="h-8 w-8 hover:bg-white/10 text-white rounded-full"
+              className="h-7 w-7 md:h-8 md:w-8 hover:bg-white/10 text-white rounded-full transition-colors"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 opacity-70" />
             </Button>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold leading-none">
+            <div className="flex flex-col justify-center">
+              <span className="text-[11px] md:text-sm font-black leading-tight tracking-tight">
                 {dict.orders.selected_count.replace('{count}', totalSelected.toString())}
               </span>
-              <span className="text-[10px] text-white/50 uppercase font-bold tracking-wider mt-0.5">
+              <span className="text-[8px] md:text-[9px] text-white/40 uppercase font-black tracking-[0.1em] leading-none mt-0.5">
                 {dict.orders.bulk_actions}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 md:gap-2">
             {/* Action 1: Add to Batch */}
             {unassignedSelected > 0 && (
               <Button 
                 size="sm" 
                 onClick={onMoveToStaged}
-                className="h-9 px-4 gap-2 bg-green-600 hover:bg-green-700 text-white border-0 font-bold text-xs rounded-full shadow-lg shadow-green-500/20 active:scale-95 transition-all"
+                className="h-8 md:h-9 px-3 md:px-4 gap-1.5 md:gap-2 bg-green-600 hover:bg-green-700 text-white border-0 font-bold text-[10px] md:text-xs rounded-full shadow-lg shadow-green-500/20 active:scale-95 transition-all"
               >
                 <Package className="h-3.5 w-3.5" />
-                {dict.orders.move_to_batch}
+                <span className="truncate">{dict.orders.move_to_batch}</span>
               </Button>
             )}
 
@@ -82,20 +82,20 @@ export function StickySelectionBar({
                 size="sm" 
                 variant="destructive"
                 onClick={onRemoveFromStaged}
-                className="h-9 px-4 gap-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full active:scale-95 transition-all"
+                className="h-8 md:h-9 px-3 md:px-4 gap-1.5 md:gap-2 bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] md:text-xs rounded-full active:scale-95 transition-all"
               >
                 <MinusCircle className="h-3.5 w-3.5" />
-                {dict.orders.remove_from_batch}
+                <span className="truncate">{dict.orders.remove_from_batch}</span>
               </Button>
             )}
 
-            <div className="w-px h-6 bg-white/10 mx-1" />
+            <div className="w-px h-6 bg-white/10 mx-0.5 md:mx-1 shrink-0" />
 
             <Button 
               size="icon" 
               variant="ghost"
               onClick={onDelete}
-              className="h-9 w-9 text-red-500 hover:text-white hover:bg-destructive rounded-full transition-all"
+              className="h-8 w-8 md:h-9 md:w-9 text-red-500 hover:text-white hover:bg-destructive rounded-full transition-all shrink-0"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

@@ -326,26 +326,18 @@ export default function BucketPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-             <div className="hidden items-center gap-2 md:flex">
-              <span className="h-1 w-1 rounded-full bg-primary/30" />
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                {dict.orders.count.replace('{count}', (orders?.length ?? 0).toString())}
-                {selectedTag === '___staged___' ? ` • ${dict.orders.batch_shipping}` : (selectedTag ? ` • ${selectedTag}` : '')}
-              </span>
-            </div>
-
+          <div className="flex items-center gap-2 md:gap-4">
             {/* Shopify-style Cart Trigger */}
             {stagedOrders && stagedOrders.length > 0 && (
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => setBatchWizardOpen(true)}
-                className="h-8 gap-1.5 border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 active:scale-95 transition-all"
+                className="h-8 md:h-9 px-2 md:px-3 gap-1.5 border-blue-500/10 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 active:scale-95 transition-all rounded-xl"
               >
-                <Package className="h-3.5 w-3.5" />
-                {dict.navigation.batch}
-                <Badge variant="default" className="h-4 min-w-[1rem] px-1 bg-blue-600 text-white text-[9px] ml-0.5">
+                <Package className="h-4 w-4" />
+                <span className="hidden sm:inline-block font-black text-[11px] uppercase tracking-wider">{dict.navigation.batch}</span>
+                <Badge variant="default" className="h-4 min-w-[1rem] px-1 bg-blue-600 text-white text-[9px] flex items-center justify-center font-black rounded-lg">
                   {stagedOrders.length}
                 </Badge>
               </Button>
@@ -353,9 +345,11 @@ export default function BucketPage() {
 
             <LanguageSelector />
 
-            <Button size="sm" onClick={() => setIntakePanelOpen(true)} className="h-8 gap-1.5 active:scale-95 transition-transform duration-200 rounded-md">
-              <Plus className="h-3.5 w-3.5" />
-              {dict.navigation.add_order.split(' ')[0]} <span className="hidden sm:inline">{dict.navigation.add_order.split(' ').slice(1).join(' ')}</span>
+            <Button size="sm" onClick={() => setIntakePanelOpen(true)} className="h-8 md:h-9 px-2.5 md:px-4 gap-1.5 active:scale-95 transition-transform duration-200 rounded-xl bg-black hover:bg-black/90 text-white">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline-block font-black text-[11px] uppercase tracking-wider">
+                {dict.navigation.add_order.split(' ')[0]} {dict.navigation.add_order.split(' ').slice(1).join(' ')}
+              </span>
             </Button>
           </div>
         </div>
