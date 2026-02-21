@@ -39,6 +39,7 @@ import { cn } from '@/lib/utils';
 import { getParserConfig } from '@/lib/config-actions';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/components/providers/language-provider';
+import { v4 as uuidv4 } from 'uuid';
 
 interface WhatsAppPasteProps {
   onImport: (orders: Omit<JastipOrder, 'id'>[]) => Promise<void>;
@@ -374,7 +375,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
   const addItemEdit = () => {
     if (!editOrder) return;
     const newItem = {
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       name: '',
       qty: 1,
       unitPrice: 0,

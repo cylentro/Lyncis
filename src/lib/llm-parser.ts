@@ -5,6 +5,7 @@ import { JastipOrder } from '@/lib/types';
 import { matchLocation } from '@/lib/location-matcher';
 import { countPotentialItems } from '@/lib/whatsapp-parser';
 import { logAiUsage } from '@/lib/ai-logger';
+import { v4 as uuidv4 } from 'uuid';
 
 const API_KEY = process.env.GEMINI_API_KEY || '';
 const LLM_MODEL = process.env.LLM_MODEL || process.env.GEMINI_MODEL || 'gemini-1.5-flash';
@@ -230,7 +231,7 @@ export async function parseWithLLM(text: string, moduleName = 'whatsapp parser')
 
                     return {
                         ...item,
-                        id: crypto.randomUUID(),
+                        id: uuidv4(),
                         qty,
                         unitPrice,
                         totalPrice,
@@ -412,7 +413,7 @@ export async function parseMultipleBlocksWithLLM(blocks: string[], moduleName = 
 
                     return {
                         ...item,
-                        id: crypto.randomUUID(),
+                        id: uuidv4(),
                         qty,
                         unitPrice,
                         totalPrice,

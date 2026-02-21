@@ -1,5 +1,6 @@
 import { JastipItem } from '@/lib/types';
 import type { JastipOrder } from '@/lib/types';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Shared item parsing library.
@@ -183,7 +184,7 @@ export function extractItems(text: string): ExtractItemsResult {
         const unitPrice = parsePrice(match[3] || '0');
 
         items.push({
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name,
             qty,
             unitPrice,
@@ -207,7 +208,7 @@ export function extractItems(text: string): ExtractItemsResult {
         const unitPrice = Math.round(totalPrice / qty);
 
         items.push({
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name,
             qty,
             unitPrice,
@@ -226,7 +227,7 @@ export function extractItems(text: string): ExtractItemsResult {
         const isTotal = normalizedText.toLowerCase().includes('total') && !normalizedText.toLowerCase().includes('harga satuan');
 
         items.push({
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name,
             qty,
             unitPrice: isTotal ? Math.round(price / qty) : price,
@@ -244,7 +245,7 @@ export function extractItems(text: string): ExtractItemsResult {
         const qty = match[3] ? parseInt(match[3]) : 1;
 
         items.push({
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name,
             qty,
             unitPrice: price,
@@ -262,7 +263,7 @@ export function extractItems(text: string): ExtractItemsResult {
         const qty = match[3] ? parseInt(match[3]) : 1;
 
         items.push({
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name,
             qty,
             unitPrice,
@@ -283,7 +284,7 @@ export function extractItems(text: string): ExtractItemsResult {
         const unitPrice = parsePrice(match[3]);
 
         items.push({
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name,
             qty,
             unitPrice,
@@ -304,7 +305,7 @@ export function extractItems(text: string): ExtractItemsResult {
         const qty = parseInt(match[3]) || 1;
 
         items.push({
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name,
             qty,
             unitPrice,
@@ -326,7 +327,7 @@ export function extractItems(text: string): ExtractItemsResult {
         const unitPrice = Math.round(totalPrice / qty);
 
         items.push({
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name,
             qty,
             unitPrice,
@@ -348,7 +349,7 @@ export function extractItems(text: string): ExtractItemsResult {
         const unitPrice = Math.round(totalPrice / qty);
 
         items.push({
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name,
             qty,
             unitPrice,
@@ -376,7 +377,7 @@ export function extractItems(text: string): ExtractItemsResult {
         const price = parsePrice(match[2]);
 
         items.push({
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name,
             qty: 1,
             unitPrice: price,
@@ -415,7 +416,7 @@ export function extractItems(text: string): ExtractItemsResult {
 
         hasUnpricedItems = true;
         deduped.push({
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name,
             qty,
             unitPrice: 0,

@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -104,7 +105,7 @@ export function BatchWizard({
                             chargeable: o.logistics.chargeableWeight || 0,
                             estimatedCost: o.logistics.estimatedCost || 0,
                             isInsured: o.insurance?.isInsured || false,
-                            insuredItems: o.insurance?.items.map((item, idx) => ({ id: item.itemId || o.items[idx]?.id || crypto.randomUUID(), ...item })) || [],
+                            insuredItems: o.insurance?.items.map((item, idx) => ({ id: item.itemId || o.items[idx]?.id || uuidv4(), ...item })) || [],
                             insuranceFee: o.insurance?.totalFee || 0,
                         };
                         hasChanges = true;
