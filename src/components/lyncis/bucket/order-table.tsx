@@ -14,6 +14,7 @@ import {
   ChevronFirst,
   AlertTriangle,
   ShieldCheck,
+  MoreVertical,
 } from 'lucide-react';
 import { useLanguage } from '@/components/providers/language-provider';
 import { formatCurrency } from '@/lib/formatters';
@@ -26,6 +27,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { JastipOrder, OrderStatus } from '@/lib/types';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 // ─── Status Badge Config ────────────────────────────────────
 
@@ -198,7 +220,7 @@ export function OrderTable({
   }
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-120px)] min-h-[500px] w-full bg-background border border-border/80 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300">
+    <div className="relative flex flex-col h-[calc(100vh-110px)] md:h-[calc(100vh-120px)] min-h-[450px] md:min-h-[500px] w-full bg-background border border-border/80 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300">
       {/* ── Filter Bar (Sticky Top) ── */}
       <div className="sticky top-0 z-30 flex flex-col md:flex-row items-center gap-4 p-4 border-b bg-background/95 backdrop-blur-md">
         <div className="relative flex-1 w-full">
@@ -210,7 +232,7 @@ export function OrderTable({
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="pl-9 bg-muted/50 focus-visible:ring-primary/20 h-10 rounded-xl border-border/50 transition-all focus:bg-background min-w-[200px]"
+            className="pl-9 bg-muted/50 focus-visible:ring-primary/20 h-10 rounded-xl border-border/50 transition-all focus:bg-background w-full min-w-[200px]"
           />
           {searchTerm && (
             <button 
@@ -222,7 +244,8 @@ export function OrderTable({
           )}
         </div>
 
-        <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-xl border border-border/50 flex-shrink-0">
+        {/* Desktop Status Tabs */}
+        <div className="hidden md:flex items-center gap-1 bg-muted/30 p-1 rounded-xl border border-border/50 flex-shrink-0">
           {(['all', 'unassigned', 'staged', 'processed'] as const).map((s) => (
             <button
               key={s}
@@ -240,7 +263,6 @@ export function OrderTable({
               {s === 'all' ? dict.common.all : dict.status[s]}
             </button>
           ))}
-          {/* Needs Review tab — only shown when there are pending orders */}
           {needsReviewCount > 0 && (
             <button
               onClick={() => {
@@ -265,6 +287,35 @@ export function OrderTable({
             </button>
           )}
         </div>
+
+        {/* Mobile Status Select */}
+        <div className="flex md:hidden w-full">
+            <Select 
+                value={statusFilter} 
+                onValueChange={(v) => {
+                    setStatusFilter(v as any);
+                    setCurrentPage(1);
+                }}
+            >
+                <SelectTrigger className="w-full h-10 rounded-xl bg-muted/30 border-border/50 text-[11px] font-black uppercase tracking-wider">
+                    <div className="flex items-center gap-2">
+                        {statusFilter === 'needs-review' && <AlertTriangle className="h-4 w-4 text-amber-600" />}
+                        <SelectValue placeholder={dict.orders.status} />
+                    </div>
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all" className="text-[11px] font-black uppercase">{dict.common.all}</SelectItem>
+                    <SelectItem value="unassigned" className="text-[11px] font-black uppercase">{dict.status.unassigned}</SelectItem>
+                    <SelectItem value="staged" className="text-[11px] font-black uppercase">{dict.status.staged}</SelectItem>
+                    <SelectItem value="processed" className="text-[11px] font-black uppercase">{dict.status.processed}</SelectItem>
+                    {needsReviewCount > 0 && (
+                        <SelectItem value="needs-review" className="text-[11px] font-black uppercase text-amber-600 font-black">
+                            {dict.orders.needs_review} ({needsReviewCount})
+                        </SelectItem>
+                    )}
+                </SelectContent>
+            </Select>
+        </div>
       </div>
 
       {/* ── Table content Area ── */}
@@ -280,7 +331,9 @@ export function OrderTable({
               <TableHead className="w-[80px] text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">{dict.orders.items}</TableHead>
               <TableHead className="w-[150px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-8">{dict.orders.total}</TableHead>
               <TableHead className="w-[120px] text-[10px] font-black uppercase tracking-widest text-muted-foreground">{dict.orders.status}</TableHead>
-              <TableHead className="sticky right-0 z-30 w-[160px] min-w-[160px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-6 bg-background/95 backdrop-blur-md shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.1)]">{dict.common.actions}</TableHead>
+              <TableHead className="sticky right-0 z-30 w-[40px] md:w-[160px] min-w-[40px] md:min-w-[160px] text-center md:text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground md:pr-6 bg-background shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.1)]">
+                <span className="hidden md:inline">{dict.common.actions}</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -344,67 +397,107 @@ export function OrderTable({
                   </TableCell>
                   <TableCell 
                     className={cn(
-                      "sticky right-0 z-10 text-right pr-4 transition-colors shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.1)]",
+                      "sticky right-0 z-10 text-center md:text-right md:pr-4 transition-colors shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.1)]",
                       isSelected ? "bg-[#f5f9ff]" : (isWarning ? "bg-[#fff9e6]" : "bg-background/95"),
                       "group-hover:bg-muted group-active:bg-muted/20 backdrop-blur-md"
                     )}
                   >
-                    <div className="flex items-center justify-end gap-1.5">
-                      
-                      {/* Prioritize Review action if triage is needed, else show Confirm if unassigned */}
-                      {order.metadata?.needsTriage ? (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-amber-600 hover:bg-amber-100/60 transition-all border border-transparent hover:border-amber-200" 
-                          onClick={() => onReview?.(order)}
-                          title={dict.common.edit}
-                        >
-                          <AlertTriangle className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        onConfirm && order.status === 'unassigned' && (
+                    <div className="flex items-center justify-center md:justify-end gap-1.5">
+                      {/* Desktop View Action Buttons */}
+                      <div className="hidden md:flex items-center gap-1.5">
+                        {order.metadata?.needsTriage ? (
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-green-600 hover:bg-green-100/50 transition-all border border-transparent hover:border-green-200" 
-                            onClick={() => onConfirm(order)}
-                            title={dict.orders.move_to_batch}
+                            className="h-8 w-8 text-amber-600 hover:bg-amber-100/60 transition-all border border-transparent hover:border-amber-200" 
+                            onClick={() => onReview?.(order)}
+                            title={dict.common.edit}
                           >
-                            <CheckCircle2 className="h-4 w-4" />
+                            <AlertTriangle className="h-4 w-4" />
                           </Button>
-                        )
-                      )}
+                        ) : (
+                          onConfirm && order.status === 'unassigned' && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-green-600 hover:bg-green-100/50 transition-all border border-transparent hover:border-green-200" 
+                              onClick={() => onConfirm(order)}
+                              title={dict.orders.move_to_batch}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                          )
+                        )}
 
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all text-muted-foreground" 
-                        onClick={() => onViewDetails(order)}
-                        title={dict.orders.view_detail}
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 hover:bg-muted text-muted-foreground transition-all" 
-                        onClick={() => onEdit(order)}
-                        title={dict.common.edit}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all text-muted-foreground" 
+                          onClick={() => onViewDetails(order)}
+                          title={dict.orders.view_detail}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 hover:bg-muted text-muted-foreground transition-all" 
+                          onClick={() => onEdit(order)}
+                          title={dict.common.edit}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
 
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-destructive hover:bg-destructive hover:text-white transition-all" 
-                        onClick={() => onDelete(order)}
-                        title={dict.common.delete}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-destructive hover:bg-destructive hover:text-white transition-all" 
+                          onClick={() => onDelete(order)}
+                          title={dict.common.delete}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      {/* Mobile View Dropdown Menu */}
+                      <div className="md:hidden">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40 border-border/40 shadow-xl rounded-xl">
+                            {order.metadata?.needsTriage ? (
+                              <DropdownMenuItem onClick={() => onReview?.(order)} className="text-amber-600 font-black text-[11px] uppercase">
+                                <AlertTriangle className="mr-2 h-4 w-4" />
+                                {dict.orders.needs_review}
+                              </DropdownMenuItem>
+                            ) : (
+                              onConfirm && order.status === 'unassigned' && (
+                                <DropdownMenuItem onClick={() => onConfirm(order)} className="text-green-600 font-black text-[11px] uppercase">
+                                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                                  {dict.orders.move_to_batch}
+                                </DropdownMenuItem>
+                              )
+                            )}
+                            <DropdownMenuItem onClick={() => onViewDetails(order)} className="font-black text-[11px] uppercase">
+                              <ExternalLink className="mr-2 h-4 w-4" />
+                              {dict.orders.view_detail}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onEdit(order)} className="font-black text-[11px] uppercase">
+                              <Pencil className="mr-2 h-4 w-4" />
+                              {dict.common.edit}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => onDelete(order)} className="text-destructive font-black text-[11px] uppercase">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              {dict.common.delete}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -415,13 +508,13 @@ export function OrderTable({
       </div>
 
       {/* ── Action Pagination (Sticky Bottom) ── */}
-      <div className="sticky bottom-0 z-30 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t bg-background/95 backdrop-blur-md shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
-        <div className="flex items-center gap-4">
-            <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 px-3 py-1.5 bg-muted/30 rounded-lg">
+      <div className="sticky bottom-0 z-30 flex flex-row items-center justify-between gap-2 p-3 border-t bg-background/95 backdrop-blur-md shadow-[0_-10px_30px_rgba(0,0,0,0.03)] overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-2">
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1 px-2 py-1 bg-muted/30 rounded-lg whitespace-nowrap">
                 <span className="text-foreground">{filteredOrders.length}</span> {filteredOrders.length === 1 ? dict.common.items_count.split(' ')[1] : dict.common.items_count_plural.split(' ')[1]}
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
                 <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">{dict.orders.show_per_page}</span>
                 <Select
                     value={pageSize.toString()}
@@ -430,7 +523,7 @@ export function OrderTable({
                         setCurrentPage(1);
                     }}
                 >
-                    <SelectTrigger className="h-8 w-[70px] text-xs font-bold rounded-lg bg-muted/20 border-border/50">
+                    <SelectTrigger className="h-7 w-[60px] text-[10px] font-bold rounded-lg bg-muted/20 border-border/50">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -438,47 +531,51 @@ export function OrderTable({
                         <SelectItem value="15">15</SelectItem>
                         <SelectItem value="25">25</SelectItem>
                         <SelectItem value="50">50</SelectItem>
-                        <SelectItem value="100">100</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <form onSubmit={handleJumpPage} className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          {/* Mobile version skip 'Go to page' unless it fits */}
+          <form onSubmit={handleJumpPage} className="hidden lg:flex items-center gap-1.5">
             <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider whitespace-nowrap">{dict.orders.go_to_page}</span>
             <Input 
                 value={jumpPage}
                 onChange={(e) => setJumpPage(e.target.value)}
-                className="h-8 w-[60px] text-center font-bold text-xs p-1 rounded-lg bg-muted/20 border-border/50"
+                className="h-7 w-[40px] text-center font-bold text-xs p-0 rounded-lg bg-muted/20 border-border/50"
                 placeholder="..."
             />
           </form>
 
-          <div className="flex items-center gap-1.5 border-l pl-4 border-border/50">
+          <div className="flex items-center gap-1 md:border-l md:pl-2 border-border/50">
             <Button 
                 variant="outline" 
                 size="icon" 
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
-                className="h-8 w-8 rounded-lg"
+                className="h-7 w-7 rounded-md"
             >
-                <ChevronFirst className="h-3.5 w-3.5" />
+                <ChevronFirst className="h-3 w-3" />
             </Button>
             <Button 
                 variant="outline" 
                 size="icon" 
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="h-8 w-8 rounded-lg"
+                className="h-7 w-7 rounded-md"
             >
-                <ChevronLeft className="h-3.5 w-3.5" />
+                <ChevronLeft className="h-3 w-3" />
             </Button>
             
-            <div className="flex items-center gap-2 mx-2">
-                <span className="text-xs font-black px-3 py-1 bg-primary text-primary-foreground rounded-lg shadow-lg shadow-primary/20">{currentPage}</span>
-                <span className="text-[10px] font-black text-muted-foreground">{dict.orders.from}</span>
-                <span className="text-xs font-black text-muted-foreground">{totalPages}</span>
+            <div className="flex items-center gap-1.5 mx-2">
+                <span className="flex items-center justify-center h-6 min-w-[24px] px-1.5 bg-primary text-primary-foreground text-[10px] font-black rounded-md shadow-sm translate-y-[0.5px]">
+                    {currentPage}
+                </span>
+                <span className="text-[10px] font-black text-muted-foreground/40 translate-y-[0.5px]">/</span>
+                <span className="flex items-center justify-center h-6 min-w-[24px] px-1.5 bg-muted/40 text-muted-foreground text-[10px] font-black rounded-md translate-y-[0.5px]">
+                    {totalPages}
+                </span>
             </div>
 
             <Button 
@@ -486,18 +583,18 @@ export function OrderTable({
                 size="icon" 
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="h-8 w-8 rounded-lg"
+                className="h-7 w-7 rounded-md"
             >
-                <ChevronRight className="h-3.5 w-3.5" />
+                <ChevronRight className="h-3 w-3" />
             </Button>
             <Button 
                 variant="outline" 
                 size="icon" 
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className="h-8 w-8 rounded-lg"
+                className="h-7 w-7 rounded-md"
             >
-                <ChevronLast className="h-3.5 w-3.5" />
+                <ChevronLast className="h-3 w-3" />
             </Button>
           </div>
         </div>
@@ -542,19 +639,3 @@ function StatusBadge({ order }: { order: JastipOrder }) {
     </Badge>
   );
 }
-
-import { JastipOrder, OrderStatus } from '@/lib/types';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-import { Label } from '@/components/ui/label';

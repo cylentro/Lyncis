@@ -13,16 +13,25 @@ import { JastipOrder, OrderStatus, SenderAddress } from '@/lib/types';
  */
 export function useOrders(filters?: { tag?: string; status?: OrderStatus }) {
     return useLiveQuery(async () => {
-        let collection = db.orders.orderBy('createdAt');
+        try {
+            // Avoid using .reverse() on the collection directly as it can cause 
+            // "Unable to open Cursor" errors in mobile Safari.
+            // Instead, fetch and sort in JavaScript memory.
+            const orders = await db.orders.toArray();
 
-        const orders = await collection.reverse().toArray();
+            // Sort by createdAt descending
+            orders.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-        // Apply client-side filters
-        return orders.filter((order) => {
-            if (filters?.tag && order.tag !== filters.tag) return false;
-            if (filters?.status && order.status !== filters.status) return false;
-            return true;
-        });
+            // Apply client-side filters
+            return orders.filter((order) => {
+                if (filters?.tag && order.tag !== filters.tag) return false;
+                if (filters?.status && order.status !== filters.status) return false;
+                return true;
+            });
+        } catch (e) {
+            console.error('Lyncis DB Error (useOrders):', e);
+            return [];
+        }
     }, [filters?.tag, filters?.status]);
 }
 
@@ -31,12 +40,15 @@ export function useOrders(filters?: { tag?: string; status?: OrderStatus }) {
  */
 export function useActiveTags() {
     return useLiveQuery(async () => {
-        const orders = await db.orders
-            .where('status')
-            .equals('unassigned')
-            .toArray();
-        const tags = new Set(orders.map((o) => o.tag).filter(Boolean));
-        return Array.from(tags).sort();
+        try {
+            const orders = await db.orders.toArray();
+            const unassignedOrders = orders.filter(o => o.status === 'unassigned');
+            const tags = new Set(unassignedOrders.map((o) => o.tag).filter(Boolean));
+            return Array.from(tags).sort();
+        } catch (e) {
+            console.error('Lyncis DB Error (useActiveTags):', e);
+            return [];
+        }
     }, []);
 }
 
@@ -45,8 +57,10 @@ export function useActiveTags() {
  */
 export function useAllTags() {
     return useLiveQuery(async () => {
-        const tags = await db.orders.orderBy('tag').uniqueKeys();
-        return (tags as string[]).filter(Boolean).sort();
+        // Fetch everything first to avoid cursor issues on iOS
+        const orders = await db.orders.toArray();
+        const tags = new Set(orders.map(o => o.tag).filter(Boolean));
+        return Array.from(tags).sort();
     }, []);
 }
 
@@ -55,25 +69,30 @@ export function useAllTags() {
  */
 export function useTagCounts() {
     return useLiveQuery(async () => {
-        const orders = await db.orders.toArray();
-        const counts: Record<string, { total: number; unassigned: number; processed: number; staged: number }> = {};
+        try {
+            const orders = await db.orders.toArray();
+            const counts: Record<string, { total: number; unassigned: number; processed: number; staged: number }> = {};
 
-        for (const order of orders) {
-            if (!order.tag) continue;
-            if (!counts[order.tag]) {
-                counts[order.tag] = { total: 0, unassigned: 0, processed: 0, staged: 0 };
+            for (const order of orders) {
+                if (!order.tag) continue;
+                if (!counts[order.tag]) {
+                    counts[order.tag] = { total: 0, unassigned: 0, processed: 0, staged: 0 };
+                }
+                counts[order.tag].total++;
+                if (order.status === 'unassigned') {
+                    counts[order.tag].unassigned++;
+                } else if (order.status === 'processed') {
+                    counts[order.tag].processed++;
+                } else if (order.status === 'staged') {
+                    counts[order.tag].staged++;
+                }
             }
-            counts[order.tag].total++;
-            if (order.status === 'unassigned') {
-                counts[order.tag].unassigned++;
-            } else if (order.status === 'processed') {
-                counts[order.tag].processed++;
-            } else if (order.status === 'staged') {
-                counts[order.tag].staged++;
-            }
+
+            return counts;
+        } catch (e) {
+            console.error('Lyncis DB Error (useTagCounts):', e);
+            return {};
         }
-
-        return counts;
     }, []);
 }
 
@@ -165,7 +184,10 @@ export async function markOrdersTriaged(ids: string[]): Promise<void> {
  * Reactive hook to fetch all sender addresses sorted by label.
  */
 export function useSenderAddresses() {
-    return useLiveQuery(() => db.senderAddresses.orderBy('label').toArray(), []);
+    return useLiveQuery(async () => {
+        const addresses = await db.senderAddresses.toArray();
+        return addresses.sort((a, b) => a.label.localeCompare(b.label));
+    }, []);
 }
 
 /**
@@ -255,7 +277,15 @@ export async function autoSaveSenderId(ids: string[], senderId: string): Promise
  * Reactive hook returning all orders with status === 'staged'.
  */
 export function useStagedOrders() {
-    return useLiveQuery(() => db.orders.where('status').equals('staged').toArray(), []);
+    return useLiveQuery(async () => {
+        try {
+            const orders = await db.orders.toArray();
+            return orders.filter(o => o.status === 'staged');
+        } catch (e) {
+            console.error('Lyncis DB Error (useStagedOrders):', e);
+            return [];
+        }
+    }, []);
 }
 
 /**
