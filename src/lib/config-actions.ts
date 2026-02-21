@@ -10,6 +10,7 @@ export async function getParserConfig() {
         enableAI: process.env.PARSER_ENABLE_AI !== 'false',
         enableRegex: process.env.PARSER_ENABLE_REGEX !== 'false',
         regexThreshold: parseFloat(process.env.PARSER_REGEX_THRESHOLD || '0.85'),
+        aiThreshold: parseFloat(process.env.PARSER_AI_THRESHOLD || '0.8'),
         intakeMethods: (process.env.INTAKE_METHODS || 'manual,excel,whatsapp').split(',').map(m => m.trim()),
         hasApiKey: !!process.env.GEMINI_API_KEY
     };

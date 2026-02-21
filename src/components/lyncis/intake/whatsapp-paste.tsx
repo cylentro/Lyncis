@@ -28,7 +28,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { parseWhatsAppText, getParsingConfidence, countPotentialItems } from '@/lib/whatsapp-parser';
-import { parseWithLLM } from '@/lib/llm-parser';
+import { parseMultipleBlocksWithLLM } from '@/lib/llm-parser';
 import { JastipOrder } from '@/lib/types';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -68,6 +68,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
     enableAI: boolean;
     enableRegex: boolean;
     regexThreshold: number;
+    aiThreshold: number;
     hasApiKey: boolean;
   } | null>(null);
 
@@ -158,30 +159,101 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
           console.warn("AI extraction requested but GEMINI_API_KEY is missing.");
           toast.error(dict.intake.ai_error.split('.')[0] + '.');
         } else {
-          // Show a subtle toast that AI is kicking in
-          const aiToastId = toast.loading(dict.intake.ai_processing);
+          // Identify which exact blocks need AI parsing
+          const blocksQueuedForAi: { index: number; blockText: string }[] = [];
           
-          try {
-            const llmResults = await parseWithLLM(text);
-            toast.dismiss(aiToastId);
-            
-            if (llmResults.length > 0) {
-              setParsedOrders(llmResults);
-              setIsInputCollapsed(true);
-              toast.success(dict.intake.ai_success.replace('{count}', llmResults.length.toString()), {
-                icon: <Sparkles className="h-4 w-4 text-amber-500" />
-              });
-              return;
-            }
-          } catch (err: any) {
-            toast.dismiss(aiToastId);
-            console.error("AI Parse Error:", err);
-            
-            // If AI specifically failed, notify the user that we are falling back to regex or standard methods
-            const errorMessage = err.message || dict.intake.ai_error;
-            toast.error(errorMessage, {
-              description: dict.intake.ai_error.split('.')[1].trim()
+          if (regexResults.length > 0) {
+            regexResults.forEach((order, index) => {
+              const currentConfidence = getParsingConfidence(order);
+              const aiThreshold = config?.aiThreshold || 0.8;
+              const orderRawItems = order.metadata?.potentialItemCount || countPotentialItems(order.metadata?.originalRawText || "");
+              const hasMissingItems = orderRawItems > (order.items?.length || 0);
+
+              const needsAiFallback = !order.items?.length || hasMissingItems || (currentConfidence < threshold);
+              
+              // GUARDRAIL: Only use AI if we have a phone number
+              if (needsAiFallback && !!order.recipient?.phone) {
+                 blocksQueuedForAi.push({
+                   index,
+                   blockText: order.metadata?.originalRawText || ""
+                 });
+              }
             });
+          } else {
+            // If regex completely failed, normally we'd parse the whole text. 
+            // In the new model, if Regex yields 0 results, we might not know the blocks. 
+            // But if it's 1 big block, we'll try it if it contains a phone number looking string.
+            if (/\d{8,}/.test(text)) {
+               blocksQueuedForAi.push({ index: 0, blockText: text });
+            }
+          }
+
+          if (blocksQueuedForAi.length > 0) {
+            // Show a subtle toast that AI is kicking in
+            const aiToastId = toast.loading(dict.intake.ai_processing);
+            
+            try {
+              const blocks = blocksQueuedForAi.map(q => q.blockText);
+              const llmResults = await parseMultipleBlocksWithLLM(blocks, 'whatsapp parser');
+              toast.dismiss(aiToastId);
+              
+              if (llmResults.length > 0) {
+                let finalResults = [...regexResults];
+
+                if (regexResults.length === 0) {
+                   finalResults = llmResults;
+                } else {
+                   // Merge back into original regex array
+                   blocksQueuedForAi.forEach((queueItem, i) => {
+                      const aiOrder = llmResults[i];
+                      if (aiOrder) {
+                         const original = finalResults[queueItem.index];
+                         finalResults[queueItem.index] = {
+                            ...original,
+                            recipient: {
+                                ...original.recipient,
+                                name: (original.recipient?.name && original.recipient?.name !== 'Penerima Impor') ? original.recipient.name : (aiOrder.recipient?.name || original.recipient?.name || ''),
+                                phone: original.recipient?.phone || (aiOrder.recipient?.phone || ''),
+                                addressRaw: original.recipient?.addressRaw || (aiOrder.recipient?.addressRaw || ''),
+                                provinsi: original.recipient?.provinsi || (aiOrder.recipient?.provinsi || ''),
+                                kota: original.recipient?.kota || (aiOrder.recipient?.kota || ''),
+                                kecamatan: original.recipient?.kecamatan || (aiOrder.recipient?.kecamatan || ''),
+                                kelurahan: original.recipient?.kelurahan || (aiOrder.recipient?.kelurahan || ''),
+                                kodepos: original.recipient?.kodepos || (aiOrder.recipient?.kodepos || ''),
+                            },
+                            items: (aiOrder.items && aiOrder.items.length >= (original.items?.length || 0)) ? aiOrder.items as import('@/lib/types').JastipItem[] : original.items,
+                            metadata: {
+                                ...original.metadata,
+                                isAiParsed: true,
+                            }
+                         };
+
+                         // Use shared aiThreshold (already defined in outer scope if we move it or re-define)
+                         const aiThreshold = config?.aiThreshold || 0.8;
+                         const postAiConfidence = getParsingConfidence(finalResults[queueItem.index]);
+                         if (finalResults[queueItem.index].metadata) {
+                            finalResults[queueItem.index].metadata!.parseWarning = postAiConfidence < aiThreshold;
+                         }
+                      }
+                   });
+                }
+                
+                setParsedOrders(finalResults);
+                setIsInputCollapsed(true);
+                toast.success(dict.intake.ai_success.replace('{count}', llmResults.length.toString()), {
+                  icon: <Sparkles className="h-4 w-4 text-amber-500" />
+                });
+                return;
+              }
+            } catch (err: any) {
+              toast.dismiss(aiToastId);
+              console.error("AI Parse Error:", err);
+              
+              const errorMessage = err.message || dict.intake.ai_error;
+              toast.error(errorMessage, {
+                description: dict.intake.ai_error.split('.')[1].trim()
+              });
+            }
           }
         }
       } else if (regexResults.length === 0 || regexConfidence < threshold) {
@@ -486,15 +558,15 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
               {editOrder?.items?.map((item, i) => (
                 <div key={item.id} className="group relative rounded-md border border-border bg-white dark:bg-muted/10 p-4 transition-all hover:border-primary/40">
                    <div className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                     <Button 
-                       variant="destructive" 
-                       size="icon" 
-                       className="h-7 w-7 rounded-md active:scale-90" 
-                       onClick={() => removeItemEdit(i)}
-                       disabled={editOrder.items!.length <= 1}
-                     >
-                       <Trash2 className="h-3.5 w-3.5" />
-                     </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 transition-all text-destructive hover:bg-destructive hover:text-white" 
+                        onClick={() => removeItemEdit(i)}
+                        disabled={editOrder.items!.length <= 1}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                    </div>
                    
                    <div className="space-y-4">
@@ -712,7 +784,7 @@ export function WhatsAppPaste({ onImport, activeTags = [], onEditingChange }: Wh
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            className="h-7 w-7 text-destructive hover:bg-destructive hover:text-white transition-all shadow-none"
                             onClick={() => removeOrder(idx)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />

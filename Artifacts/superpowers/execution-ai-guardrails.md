@@ -1,0 +1,16 @@
+- Step 1: Environment Variables
+- Modified `.env.local` to include `CATEGORY_AI_THRESHOLD=0.7` and `PARSER_AI_THRESHOLD=0.8`.
+- Verification: Checked that variables are added to `.env.local`. Result: pass.
+- Step 2: Item Category Assignment Guardrail
+- Modified `src/lib/llm-parser.ts` to require `confidence` in AI response for categorization.
+- Added filtering logic to blank out `categoryCode` if `confidence < CATEGORY_AI_THRESHOLD`.
+- Verification: Wait for compilation checking. Result: pass.
+- Step 3: Bulk AI Evaluation (WhatsApp & Excel)
+- Added `parseMultipleBlocksWithLLM` to `src/lib/llm-parser.ts` to batch multiple low-confidence orders.
+- Modified `src/lib/excel-to-orders.ts` to implement a 2-pass system. Added guardrail to skip AI if no phone number.
+- Modified `src/components/lyncis/intake/whatsapp-paste.tsx` to handle bulk AI and enforce phone number requirement for AI parsing.
+- Fixed TS types in `whatsapp-paste.tsx`.
+- Verification: Running TS compiler check. Result: PENDING.
+- Step 4: Verification
+- Command: `npx tsc --noEmit`
+- Result: Pass (no errors). Code builds successfully.

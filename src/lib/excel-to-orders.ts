@@ -1,7 +1,7 @@
 import { JastipOrder, JastipItem } from '@/lib/types';
 import { extractItems, parsePrice, getParsingConfidence, countPotentialItems } from '@/lib/item-parser';
 import { matchLocation } from '@/lib/location-matcher';
-import { parseWithLLM } from '@/lib/llm-parser';
+import { parseMultipleBlocksWithLLM } from '@/lib/llm-parser';
 
 /**
  * Converts raw Excel rows into JastipOrder structures based on the user mapping.
@@ -12,12 +12,17 @@ export async function convertRowsToOrders(
     mapping: Record<string, string>,
     defaultTag: string = 'General',
     sourceFileName?: string,
-    options?: { enableAI?: boolean; threshold?: number }
+    options?: { enableAI?: boolean; threshold?: number; aiThreshold?: number }
 ): Promise<Omit<JastipOrder, 'id'>[]> {
     const enableAI = options?.enableAI ?? true;
     const threshold = options?.threshold ?? 0.8;
+    const aiThreshold = options?.aiThreshold ?? 0.8;
 
-    const orders = await Promise.all(rows.map(async (row) => {
+    // Track rows that need AI fallback
+    const aiFallbackQueue: { index: number; context: string; originalOrder: Omit<JastipOrder, 'id'> }[] = [];
+
+    // PASS 1: Native parsing + collect AI fallbacks
+    const orders = await Promise.all(rows.map(async (row, index) => {
         // Determine the tag: from mapping OR default
         const rowTag = mapping['tag'] ? row[mapping['tag']]?.trim() : '';
         const tag = rowTag || defaultTag;
@@ -63,22 +68,8 @@ export async function convertRowsToOrders(
             }
         }
 
-        // Fallback: If no items parsed or itemNameRaw is just a simple name
-        if (finalItems.length === 0) {
-            const qty = Math.max(1, mappedQty || 1);
-            const unitPrice = mappedUnitPrice;
-            const totalPrice = mappedTotalPrice || (unitPrice * qty);
-
-            finalItems.push({
-                id: crypto.randomUUID(),
-                name: itemNameRaw || 'Barang Impor',
-                qty,
-                unitPrice,
-                totalPrice,
-                rawWeightKg: mappedWeight,
-                isManualTotal: !!mapping['items[0].totalPrice'],
-            });
-        }
+        // REMOVED: Placeholder "Barang Impor" logic to align with WhatsApp 1:1.
+        // If finalItems is 0, we leave it as 0 to correctly trigger AI fallback.
 
         // Secondary Recalculation (safety check)
         finalItems.forEach(item => {
@@ -141,56 +132,74 @@ export async function convertRowsToOrders(
             }
         };
 
-        // ── AI Net Safe Logic ──
+        // ── AI Net Safe Logic (Collection Phase) ──
         if (enableAI) {
             const currentConfidence = getParsingConfidence(order);
-            const totalRawItems = countPotentialItems(itemNameRaw + "\n" + addressRaw);
+            // CONTEXT EXPANSION: Scan all row cell values to find potential hidden items
+            const fullRowText = Object.values(row).filter(v => v !== null && v !== undefined).join('\n');
+            const totalRawItems = countPotentialItems(fullRowText);
             const hasMissingItems = totalRawItems > order.items.length;
 
-            // Priority: Only use AI if Regex/Mapping failed significantly
-            if (order.items.length === 0 || (currentConfidence < threshold && currentConfidence < 0.6)) {
-                try {
-                    // Combine row data into a string for AI context
-                    const rowContext = Object.entries(row)
-                        .filter(([_, v]) => v && v.toString().trim().length > 0)
-                        .map(([k, v]) => `${k}: ${v}`)
-                        .join('\n');
+            // Priority: Only use AI if Regex/Mapping failed significantly AND we have a phone number
+            // (Sync with WhatsApp: threshold check is now strict per .env)
+            const needsAiFallback = order.items.length === 0 || hasMissingItems || (currentConfidence < threshold);
 
-                    const aiResults = await parseWithLLM(rowContext);
-                    if (aiResults && aiResults.length > 0) {
-                        const aiOrder = aiResults[0];
+            if (needsAiFallback && !!order.recipient.phone) {
+                const rowContext = Object.entries(row)
+                    .filter(([_, v]) => v && v.toString().trim().length > 0)
+                    .map(([k, v]) => `${k}: ${v}`)
+                    .join('\n');
 
-                        // Merge AI results: Prefer mapped column data if it was strong, 
-                        // but use AI for items and messy address parts.
-                        return {
-                            ...order,
-                            recipient: {
-                                ...order.recipient,
-                                name: (order.recipient.name && order.recipient.name !== 'Penerima Impor') ? order.recipient.name : (aiOrder.recipient?.name || order.recipient.name),
-                                phone: order.recipient.phone || (aiOrder.recipient?.phone || ''),
-                                addressRaw: order.recipient.addressRaw || (aiOrder.recipient?.addressRaw || ''),
-                                provinsi: order.recipient.provinsi || (aiOrder.recipient?.provinsi || ''),
-                                kota: order.recipient.kota || (aiOrder.recipient?.kota || ''),
-                                kecamatan: order.recipient.kecamatan || (aiOrder.recipient?.kecamatan || ''),
-                                kelurahan: order.recipient.kelurahan || (aiOrder.recipient?.kelurahan || ''),
-                                kodepos: order.recipient.kodepos || (aiOrder.recipient?.kodepos || ''),
-                            },
-                            // If AI found more items or we were missing items, use AI items
-                            items: (aiOrder.items && aiOrder.items.length >= order.items.length) ? aiOrder.items as JastipItem[] : order.items,
-                            metadata: {
-                                ...order.metadata,
-                                isAiParsed: true,
-                            }
-                        };
-                    }
-                } catch (err) {
-                    console.warn('AI fallback failed for row:', err);
-                }
+                aiFallbackQueue.push({ index, context: rowContext, originalOrder: order });
             }
         }
 
         return order;
     }));
+
+    // PASS 2: Execute Bulk AI Fallback
+    if (enableAI && aiFallbackQueue.length > 0) {
+        try {
+            const blocks = aiFallbackQueue.map(q => q.context);
+            const aiResults = await parseMultipleBlocksWithLLM(blocks, 'excel parser');
+
+            // Merge results back into the main orders array
+            aiFallbackQueue.forEach((queueItem, i) => {
+                const aiOrder = aiResults[i];
+                if (aiOrder) {
+                    const original = queueItem.originalOrder;
+
+                    orders[queueItem.index] = {
+                        ...original,
+                        recipient: {
+                            ...original.recipient,
+                            name: (original.recipient.name && original.recipient.name !== 'Penerima Impor') ? original.recipient.name : (aiOrder.recipient?.name || original.recipient.name),
+                            phone: original.recipient.phone || (aiOrder.recipient?.phone || ''),
+                            addressRaw: original.recipient.addressRaw || (aiOrder.recipient?.addressRaw || ''),
+                            provinsi: original.recipient.provinsi || (aiOrder.recipient?.provinsi || ''),
+                            kota: original.recipient.kota || (aiOrder.recipient?.kota || ''),
+                            kecamatan: original.recipient.kecamatan || (aiOrder.recipient?.kecamatan || ''),
+                            kelurahan: original.recipient.kelurahan || (aiOrder.recipient?.kelurahan || ''),
+                            kodepos: original.recipient.kodepos || (aiOrder.recipient?.kodepos || ''),
+                        },
+                        items: (aiOrder.items && aiOrder.items.length >= original.items.length) ? aiOrder.items as JastipItem[] : original.items,
+                        metadata: {
+                            ...original.metadata,
+                            isAiParsed: true,
+                        }
+                    };
+
+                    // Re-calculate confidence and apply AI threshold for quality control
+                    const postAiConfidence = getParsingConfidence(orders[queueItem.index]);
+                    if (orders[queueItem.index].metadata) {
+                        orders[queueItem.index].metadata!.parseWarning = postAiConfidence < aiThreshold;
+                    }
+                }
+            });
+        } catch (err) {
+            console.warn('Bulk AI fallback failed for Excel rows:', err);
+        }
+    }
 
     return orders;
 }

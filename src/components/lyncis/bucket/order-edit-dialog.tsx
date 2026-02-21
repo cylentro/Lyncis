@@ -324,7 +324,7 @@ export function OrderEditDialog({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        className="h-7 w-7 text-destructive hover:bg-destructive hover:text-white transition-all shadow-none"
                         onClick={() => removeItem(index)}
                         disabled={formData.items.length <= 1}
                       >

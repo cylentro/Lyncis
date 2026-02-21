@@ -33,6 +33,7 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
     enableAI: boolean;
     enableRegex: boolean;
     regexThreshold: number;
+    aiThreshold: number;
     hasApiKey: boolean;
   } | null>(null);
 
@@ -97,7 +98,8 @@ export function ExcelUpload({ onImport, activeTags = [] }: ExcelUploadProps) {
         file?.name,
         {
           enableAI: config?.enableAI ?? true,
-          threshold: config?.regexThreshold || 0.8
+          threshold: config?.regexThreshold || 0.8,
+          aiThreshold: config?.aiThreshold || 0.8
         }
       );
       if (aiToastId) toast.dismiss(aiToastId);

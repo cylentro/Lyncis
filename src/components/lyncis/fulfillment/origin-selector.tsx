@@ -303,7 +303,7 @@ export function OriginSelector({
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/5"
+                                            className="h-7 w-7 text-destructive hover:bg-destructive hover:text-white transition-all shadow-none"
                                             onClick={(e) => handleDelete(e, addr.id)}
                                         >
                                             <Trash2 className="h-3.5 w-3.5" />

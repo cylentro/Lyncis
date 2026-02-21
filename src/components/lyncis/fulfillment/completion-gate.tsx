@@ -96,7 +96,7 @@ export function CompletionGate({
                                     onRemoveSelected(Array.from(selectedIds));
                                     setSelectedIds(new Set());
                                 }} 
-                                className="h-8 gap-1.5 px-3 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all font-bold whitespace-nowrap"
+                                className="h-8 gap-1.5 px-3 bg-transparent border border-destructive/20 text-destructive hover:bg-destructive hover:text-white transition-all font-bold whitespace-nowrap shadow-none"
                             >
                                 <Trash2 className="h-3.5 w-3.5" />
                                 {dict.wizard.remove_selected} ({selectedIds.size})
@@ -107,7 +107,7 @@ export function CompletionGate({
                             variant="destructive" 
                             size="sm" 
                             onClick={onRemoveAllOrders} 
-                            className="h-8 gap-1.5 px-3 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all font-bold shrink-0 whitespace-nowrap"
+                            className="h-8 gap-1.5 px-3 bg-transparent border border-destructive/20 text-destructive hover:bg-destructive hover:text-white transition-all font-bold shrink-0 whitespace-nowrap shadow-none"
                         >
                             <Trash2 className="h-3.5 w-3.5" />
                             {dict.wizard.empty_batch}
@@ -160,7 +160,7 @@ export function CompletionGate({
                                             <Button
                                                 size="icon"
                                                 variant="ghost"
-                                                className="h-8 w-8 text-muted-foreground hover:text-destructive active:scale-95 transition-all"
+                                                className="h-8 w-8 text-destructive hover:bg-destructive hover:text-white active:scale-95 transition-all"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     onRemoveOrder(order.id);

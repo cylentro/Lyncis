@@ -95,7 +95,7 @@ export function StickySelectionBar({
               size="icon" 
               variant="ghost"
               onClick={onDelete}
-              className="h-9 w-9 text-white/70 hover:text-white hover:bg-destructive rounded-full transition-all"
+              className="h-9 w-9 text-red-500 hover:text-white hover:bg-destructive rounded-full transition-all"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

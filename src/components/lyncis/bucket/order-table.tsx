@@ -393,7 +393,7 @@ export function OrderTable({
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10 transition-all border border-transparent hover:border-destructive/20" 
+                        className="h-8 w-8 text-destructive hover:bg-destructive hover:text-white transition-all" 
                         onClick={() => onDelete(order)}
                         title={dict.common.delete}
                       >

@@ -84,7 +84,7 @@ export const ITEM_LINE_CLEANUP_PATTERNS = [
     // Pattern 2: Item - Qty - Price
     /^\s*[^\-\n]+?\s*-\s*\d+\s*(?:pcs|pc|buah|box|pack)?\s*-\s*(?:Rp\.?\s*)?[0-9.,]+\s*$/mi,
     // Pattern 4: Simple list
-    /^\s*[-•]\s*([A-Za-z0-9\s.]+?)\s+(?:Rp\.?\s*)?([0-9.,]+(?:\s*k)?)(?:\s*x\s*(\d+))?\s*$/mi,
+    /^\s*[-•]\s*([A-Za-z0-9[ \t].+?)\s+(?:Rp\.?\s*)?([0-9.,]+(?:\s*k)?)(?:\s*x\s*(\d+))?\s*$/mi,
     // Pattern 5: Numbered list
     /^\s*\d+\.\s*[^@\n(]+?(?:\s*@\s*(?:Rp\.?\s*)?[0-9.,]+)?(?:\s*\(\d+\s*(?:pcs|pc|buah|box|pack)?\))?\s*$/mi,
     // Pattern 6: Qty Item TotalPrice
@@ -92,9 +92,9 @@ export const ITEM_LINE_CLEANUP_PATTERNS = [
     // Pattern 7: Qty Item @ Price
     /^\s*(\d+)\s+(.+?)\s*@\s*(?:Rp\.?\s*)?([0-9.,k\s\.]+)\s*$/mi,
     // Pattern 8: Item Qty Price
-    /^\s*([A-Za-z][\w\s\.]*?)\s+(\d+)\s+(?:Rp\.?\s*)?([0-9.,]+(?:\s*k)?)\s*$/mi,
+    /^\s*([A-Za-z][\w[ \t]\.]*?)\s+(\d+)\s+(?:Rp\.?\s*)?([0-9.,]+(?:\s*k)?)\s*$/mi,
     // Pattern 9: Name Price
-    /^\s*([A-Za-z][\w\s\.]*?)\s+(?:Rp\.?\s*)?([0-9.,]+(?:\s*k)?)\s*$/mi,
+    /^\s*([A-Za-z][\w[ \t]\.]*?)\s+(?:Rp\.?\s*)?([0-9.,]+(?:\s*k)?)\s*$/mi,
     // Pattern 10: Item @ Price Qty
     /^\s*.+?\s+@\s*(?:Rp\.?\s*)?[0-9.,k\s]+\s+\d+\s*[x]?\s*$/mi,
     // Supplemental (unpriced)
@@ -151,7 +151,7 @@ export function extractItems(text: string): ExtractItemsResult {
 
     // Pattern 4: Simple list with prices (e.g., "- Pocky Matcha 30000")
     // Now allows digits in name (e.g. "- Aqua 600ml 3000")
-    const simpleListPattern = /^\s*[-•]\s*([A-Za-z0-9\s.]+?)\s+(?:Rp\.?\s*)?([0-9.,]+(?:\s*k)?)(?:\s*x\s*(\d+))?\s*$/gmi;
+    const simpleListPattern = /^\s*[-•]\s*([A-Za-z0-9[ \t].+?)\s+(?:Rp\.?\s*)?([0-9.,]+(?:\s*k)?)(?:\s*x\s*(\d+))?\s*$/gmi;
 
     // Pattern 5: Numbered list (e.g., "1. Pocky Matcha @30000 (2pcs)")
     const numberedPattern = /^\s*\d+\.\s*([^@\n(]+?)(?:\s*@\s*(?:Rp\.?\s*)?([0-9.,]+))?(?:\s*\((\d+)\s*(?:pcs|pc|buah|box|pack)?\))?\s*$/gmi;
@@ -163,10 +163,10 @@ export function extractItems(text: string): ExtractItemsResult {
     const qtyItemAtPricePattern = /^\s*(\d+)\s+(.+?)\s*@\s*(?:Rp\.?\s*)?([0-9.,k\s\.]+)\s*$/gmi;
 
     // Pattern 8: Item Qty Price (e.g. "Indomie Goreng Rendang 3 9000")
-    const itemQtyTotalPattern = /^\s*([A-Za-z][\w\s\.]*?)\s+(\d+)\s+(?:Rp\.?\s*)?([0-9.,]+(?:\s*k)?)\s*$/gmi;
+    const itemQtyTotalPattern = /^\s*([A-Za-z][\w[ \t]\.]*?)\s+(\d+)\s+(?:Rp\.?\s*)?([0-9.,]+(?:\s*k)?)\s*$/gmi;
 
     // Pattern 9: Name Price (assumes qty 1, e.g. "Indomie Kuah Soto 9000")
-    const namePricePattern = /^\s*([A-Za-z][\w\s\.]*?)\s+(?:Rp\.?\s*)?([0-9.,]+(?:\s*k)?)\s*$/gmi;
+    const namePricePattern = /^\s*([A-Za-z][\w[ \t]\.]*?)\s+(?:Rp\.?\s*)?([0-9.,]+(?:\s*k)?)\s*$/gmi;
 
     // Pattern 10: Item @ Price Qty (e.g., "Pocky Matcha @30000 2x")
     const itemAtPriceQtyPattern = /^\s*(.+?)\s+@\s*(?:Rp\.?\s*)?([0-9.,k\s]+)\s+(\d+)\s*[x]?\s*$/gmi;
@@ -436,8 +436,10 @@ export function extractItems(text: string): ExtractItemsResult {
  */
 export function getParsingConfidence(order: Partial<JastipOrder>): number {
     let score = 0;
+    const placeholderNames = ['tanpa nama', 'penerima impor', 'penerima', 'barang impor'];
+    const isPlaceholder = order.recipient?.name && placeholderNames.includes(order.recipient.name.toLowerCase());
 
-    if (order.recipient?.name && order.recipient.name.length > 2) score += 0.35;
+    if (order.recipient?.name && order.recipient.name.length > 2 && !isPlaceholder) score += 0.35;
     if (order.recipient?.phone && order.recipient.phone.length >= 8) score += 0.25;
     if (order.recipient?.addressRaw && order.recipient.addressRaw.length > 10) score += 0.25;
     if (order.items && order.items.length > 0) {
@@ -467,8 +469,9 @@ export function countPotentialItems(text: string): number {
 
     const itemContentMarkers = [
         /@\s*(?:Rp\.?)?\s*[0-9.,k]+/i,
-        /\s+(?:Rp\.)?\s*[0-9.,]+(?:k)?\b/i,
+        /\s+(?:Rp\.)?\s*[0-9.,]+(?:k|ribu|rb|rebu|jt|juta|mio)\b/i,
         /\s*x\s*\d+\s*/i,
+        /\b(?:beli|pesan|order)\s+\d+/i,
     ];
 
     lines.forEach(line => {

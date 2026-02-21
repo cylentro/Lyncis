@@ -37,6 +37,11 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 - **Visual Polish**: Loading skeletons, `Loader2` spinners, error boundary, and standardized `formatWeight` / `formatCurrency` utilities (✅ Complete)
 - **PWA Configuration**: Full offline capability and installability via `@serwist/next` with custom branded iconography (✅ Complete)
 - **Refining Logistics & UI Consistency**: Added "Cold Delivery" restricted category mapping, shadow-none aesthetic across all components, and zero-state dropdown defaults (✅ Complete)
+- **AI Logger**: Airtable-backed usage logging for all AI calls — tracks model, tokens, source (WhatsApp/Batch), and latency (✅ Complete)
+- **AI Guardrails**: Strict location lookup enforcement, multi-pass item filtering, and zipcode/address separation heuristics for more reliable AI extraction (✅ Complete)
+- **Greedy Regex Priority**: Parser now correctly prefers regex results when confidence threshold is met, with AI serving as fallback only (✅ Complete)
+- **Excel Regression Fix**: Restored correct Excel import field mapping after parser refactor (✅ Complete)
+- **Responsive Table**: Horizontal scroll on action columns, improved search bar sizing, and sticky columns on narrow viewports (✅ Complete)
 
 ## 🛠️ Tech Stack
 
@@ -148,5 +153,5 @@ This project is part of the Lyncis POC initiative.
 
 ---
 
-**Last Updated**: February 20, 2026  
+**Last Updated**: February 21, 2026  
 **Build Status**: ✅ Passing production build (Next.js 16 / Webpack for Serwist support)
