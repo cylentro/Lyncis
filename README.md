@@ -41,7 +41,7 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 - **AI Guardrails**: Strict location lookup enforcement, multi-pass item filtering, and zipcode/address separation heuristics for more reliable AI extraction (✅ Complete)
 - **Greedy Regex Priority**: Parser now correctly prefers regex results when confidence threshold is met, with AI serving as fallback only (✅ Complete)
 - **Excel Regression Fix**: Restored correct Excel import field mapping after parser refactor (✅ Complete)
-- **Responsive Table**: Horizontal scroll on action columns, improved search bar sizing, and sticky columns on narrow viewports (✅ Complete)
+- **Responsive Table**: Horizontal scroll on action columns, improved search bar sizing, and **sticky right-aligned action buttons** for narrow viewports (✅ Complete)
 
 ## 🛠️ Tech Stack
 

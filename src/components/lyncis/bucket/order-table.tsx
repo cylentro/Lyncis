@@ -210,7 +210,7 @@ export function OrderTable({
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="pl-9 bg-muted/50 focus-visible:ring-primary/20 h-10 rounded-xl border-border/50 transition-all focus:bg-background"
+            className="pl-9 bg-muted/50 focus-visible:ring-primary/20 h-10 rounded-xl border-border/50 transition-all focus:bg-background min-w-[200px]"
           />
           {searchTerm && (
             <button 
@@ -222,7 +222,7 @@ export function OrderTable({
           )}
         </div>
 
-        <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-xl border border-border/50">
+        <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-xl border border-border/50 flex-shrink-0">
           {(['all', 'unassigned', 'staged', 'processed'] as const).map((s) => (
             <button
               key={s}
@@ -268,7 +268,7 @@ export function OrderTable({
       </div>
 
       {/* ── Table content Area ── */}
-      <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-muted-foreground/10 hover:scrollbar-thumb-muted-foreground/20 bg-muted/5">
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/10 hover:scrollbar-thumb-muted-foreground/20 bg-muted/5">
         <Table className="relative w-full border-separate border-spacing-0">
           <TableHeader className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b">
             <TableRow className="hover:bg-transparent border-b">
@@ -280,7 +280,7 @@ export function OrderTable({
               <TableHead className="w-[80px] text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">{dict.orders.items}</TableHead>
               <TableHead className="w-[150px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-8">{dict.orders.total}</TableHead>
               <TableHead className="w-[120px] text-[10px] font-black uppercase tracking-widest text-muted-foreground">{dict.orders.status}</TableHead>
-              <TableHead className="w-[140px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-6">{dict.common.actions}</TableHead>
+              <TableHead className="sticky right-0 z-30 w-[160px] min-w-[160px] text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground pr-6 bg-background/95 backdrop-blur-md shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.1)]">{dict.common.actions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -342,7 +342,13 @@ export function OrderTable({
                   <TableCell>
                     <StatusBadge order={order} />
                   </TableCell>
-                  <TableCell className="text-right pr-4">
+                  <TableCell 
+                    className={cn(
+                      "sticky right-0 z-10 text-right pr-4 transition-colors shadow-[-10px_0_20px_-10px_rgba(0,0,0,0.1)]",
+                      isSelected ? "bg-[#f5f9ff]" : (isWarning ? "bg-[#fff9e6]" : "bg-background/95"),
+                      "group-hover:bg-muted group-active:bg-muted/20 backdrop-blur-md"
+                    )}
+                  >
                     <div className="flex items-center justify-end gap-1.5">
                       
                       {/* Prioritize Review action if triage is needed, else show Confirm if unassigned */}
