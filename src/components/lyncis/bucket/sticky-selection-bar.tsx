@@ -38,10 +38,10 @@ export function StickySelectionBar({
           exit={{ y: 100, opacity: 0, x: '-50%' }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           className={cn(
-            "fixed bottom-6 left-1/2 z-40 flex items-center gap-4",
-            "px-6 py-3 rounded-2xl shadow-2xl border border-white/10",
+            "fixed bottom-6 left-1/2 z-40 flex items-center gap-2 md:gap-4",
+            "px-3 md:px-6 py-2 md:py-3 rounded-2xl shadow-2xl border border-white/10",
             "bg-foreground/95 backdrop-blur-md text-background",
-            "w-[calc(100%-2rem)] sm:w-auto sm:min-w-[400px] justify-between"
+            "w-[calc(100%-1.5rem)] sm:w-auto sm:min-w-[400px] justify-between"
           )}
         >
           <div className="flex items-center gap-2.5 pr-3 md:pr-4 border-r border-white/10 shrink-0">
@@ -63,16 +63,16 @@ export function StickySelectionBar({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 md:gap-2">
+          <div className="flex items-center gap-1.5 md:gap-2 overflow-hidden">
             {/* Action 1: Add to Batch */}
             {unassignedSelected > 0 && (
               <Button 
                 size="sm" 
                 onClick={onMoveToStaged}
-                className="h-8 md:h-9 px-3 md:px-4 gap-1.5 md:gap-2 bg-green-600 hover:bg-green-700 text-white border-0 font-bold text-[10px] md:text-xs rounded-full shadow-lg shadow-green-500/20 active:scale-95 transition-all"
+                className="h-8 md:h-10 px-2 md:px-4 gap-2 bg-green-600 hover:bg-green-700 text-white border-0 font-bold text-[10px] md:text-xs rounded-full shadow-lg shadow-green-500/20 active:scale-95 transition-all shrink-0"
               >
-                <Package className="h-3.5 w-3.5" />
-                <span className="truncate">{dict.orders.move_to_batch}</span>
+                <Package className="h-4 w-4 md:h-3.5 md:w-3.5" />
+                <span className="hidden md:inline-block truncate max-w-[100px]">{dict.orders.move_to_batch}</span>
               </Button>
             )}
 
@@ -82,10 +82,10 @@ export function StickySelectionBar({
                 size="sm" 
                 variant="destructive"
                 onClick={onRemoveFromStaged}
-                className="h-8 md:h-9 px-3 md:px-4 gap-1.5 md:gap-2 bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] md:text-xs rounded-full active:scale-95 transition-all"
+                className="h-8 md:h-10 px-2 md:px-4 gap-2 bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] md:text-xs rounded-full active:scale-95 transition-all shrink-0"
               >
-                <MinusCircle className="h-3.5 w-3.5" />
-                <span className="truncate">{dict.orders.remove_from_batch}</span>
+                <MinusCircle className="h-4 w-4 md:h-3.5 md:w-3.5" />
+                <span className="hidden md:inline-block truncate max-w-[100px]">{dict.orders.remove_from_batch}</span>
               </Button>
             )}
 

@@ -45,7 +45,7 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 - **Mobile UI Refinements**: Collapsed action buttons into 3-dots dropdown, adaptive Select filter for status, and compact single-row pagination footer (✅ Complete)
 - **iOS/Safari Stability**: Mitigated IndexedDB "Unable to open Cursor" errors by migrating all reactive hooks to JS-side sorting and filtering (✅ Complete)
 - **Android Compatibility**: Fixed `crypto.randomUUID` incompatibility in older Android browsers by migrating to `uuid` library (✅ Complete)
-- **UI Polish**: Refined header for mobile (text hiding, compact gaps) and polished Floating Action Bar (FAB) with premium typography and better mobile balance (✅ Complete)
+- **Adaptive Mobile UI**: Implemented ultra-compact header and Floating Action Bar (FAB) for very narrow mobile screens, utilizing icon-only states and hidden text to prevent overflow (✅ Complete)
 
 ## 🛠️ Tech Stack
 

@@ -313,13 +313,13 @@ export default function BucketPage() {
               <Menu className="h-5 w-5" />
             </Button>
 
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center shrink-0">
                 <img src="/icon.svg" alt="Lyncis" className="h-6 w-6" />
               </div>
-              <div>
-                <h1 className="text-sm font-bold tracking-tight">{dict.common.app_name}</h1>
-                <p className="hidden text-[10px] font-medium text-muted-foreground sm:block leading-none">
+              <div className="hidden md:block">
+                <h1 className="text-sm font-black tracking-tight leading-none">{dict.common.app_name}</h1>
+                <p className="text-[9px] font-bold text-muted-foreground leading-none mt-0.5">
                   {dict.common.app_description}
                 </p>
               </div>
