@@ -158,5 +158,5 @@ This project is part of the Lyncis POC initiative.
 
 ---
 
-**Last Updated**: February 21, 2026  
+**Last Updated**: February 22, 2026  
 **Build Status**: ✅ Passing production build (Next.js 16 / Webpack for Serwist support)
