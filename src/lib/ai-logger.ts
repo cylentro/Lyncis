@@ -15,6 +15,15 @@ interface AiUsageLogPayload {
 }
 
 /**
+ * Simple heuristic to estimate token count when API doesn't provide it.
+ * Rule of thumb: ~4 characters per token for English/Mixed text.
+ */
+function estimateTokens(text?: string): number {
+    if (!text) return 0;
+    return Math.ceil(text.length / 4);
+}
+
+/**
  * Logs AI usage to Airtable for observability and cost tracking.
  * This is designed to be "fire-and-forget" – it should not block the main application flow.
  */
@@ -27,21 +36,32 @@ export async function logAiUsage(payload: AiUsageLogPayload): Promise<{ success:
         return { success: false, message: 'AIRTABLE_API_KEY or AIRTABLE_BASE_ID missing.' };
     }
 
+    // Heuristic Fallbacks if explicit tokens are 0 or undefined
+    const inputTokens = (payload.inputTokens && payload.inputTokens > 0)
+        ? payload.inputTokens
+        : estimateTokens(payload.completePrompt);
+
+    const outputTokens = (payload.outputTokens && payload.outputTokens > 0)
+        ? payload.outputTokens
+        : estimateTokens(payload.actualOutput);
+
     // Initialize fields with everything provided
     let fields: Record<string, any> = {
         'module_name': payload.moduleName,
         'ai_model': payload.aiModel,
         'complete_prompt': payload.completePrompt,
         'timestamp': new Date().toISOString(),
+        'input_tokens': inputTokens,
+        'output_tokens': outputTokens,
     };
 
     // Add optional fields
     if (payload.actualOutput !== undefined) fields['actual_output'] = payload.actualOutput;
     if (payload.systemPromptLength !== undefined) fields['system_prompt_length'] = payload.systemPromptLength;
     if (payload.userPromptLength !== undefined) fields['user_prompt_length'] = payload.userPromptLength;
-    if (payload.inputTokens !== undefined) fields['input_tokens'] = payload.inputTokens;
-    if (payload.outputTokens !== undefined) fields['output_tokens'] = payload.outputTokens;
-    if (payload.totalTokenEstimation !== undefined) fields['total_token_estimation'] = payload.totalTokenEstimation;
+
+    // totalTokenEstimation can be explicitly provided or calculated
+    fields['total_token_estimation'] = payload.totalTokenEstimation ?? (inputTokens + outputTokens);
     if (payload.executionTimeMs !== undefined) fields['execution_time_ms'] = payload.executionTimeMs;
     if (payload.status !== undefined) fields['status'] = payload.status;
 

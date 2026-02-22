@@ -46,6 +46,7 @@ A modern, offline-first Jastip order management system built with Next.js 16, fe
 - **iOS/Safari Stability**: Mitigated IndexedDB "Unable to open Cursor" errors by migrating all reactive hooks to JS-side sorting and filtering (✅ Complete)
 - **Android Compatibility**: Fixed `crypto.randomUUID` incompatibility in older Android browsers by migrating to `uuid` library (✅ Complete)
 - **Adaptive Mobile UI**: Implemented ultra-compact header and Floating Action Bar (FAB) for very narrow mobile screens, utilizing icon-only states and hidden text to prevent overflow (✅ Complete)
+- **AI Logging Fix**: Implemented manual token estimation fallback (~4 chars/token) for AI usage logs to ensure accuracy even when the API doesn't return usage metadata (✅ Complete)
 
 ## 🛠️ Tech Stack
 
